@@ -3,7 +3,7 @@ from collections import defaultdict
 
 # path to compressed save file
 # change this to point to current game installation directory
-INPUT_FILE_PATH = "/media/christian/SSD/Windows/Steam/" + \
+INPUT_FILE_PATH = "/PATH/TO/YOUR/STEAMDIR" + \
                   "steamapps/common/Dungeon Defenders/Binaries/Win32/DunDefHeroes.dun".replace("/", sep)
 # path to decompressed save file
 DECOMP_FILE_PATH = "data/DunDefHeroes.decomp".replace("/", sep)
