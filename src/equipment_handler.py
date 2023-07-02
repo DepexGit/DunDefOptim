@@ -90,7 +90,7 @@ class EquipmentHandler:
             targets (dict{string: dict{string, float}}): Maps target names to weights for optimization
         """
         for target in targets.keys():
-            if target not in [e.owner for e in self.all_equipment]:
+            if target not in self.target_classes.keys():
                 raise Exception(f"Unknown optimization target '{target}'")
             for key in targets[target].keys():
                 if key not in STAT_OFFSET_DICT.keys():
@@ -120,7 +120,6 @@ class EquipmentHandler:
             list[int]: Indices of equipment found during optimization
             float: Optimization score
         """
-        print("Finding optimal equipment...")
         all_equips = []
         all_stats = []
         all_scores = []
@@ -221,7 +220,7 @@ class EquipmentHandler:
             elif num > 0:
                 color = Fore.GREEN
             return color
-        delim = "=========================================================="
+        delim = "=" * 60
         header = list(STAT_OFFSET_DICT.keys())[4:]
         start_index = 0
         is_dps_target = False
@@ -232,6 +231,10 @@ class EquipmentHandler:
         for i in range(start_index, len(all_scores)):
             equip, stat, score = all_equips[i], all_stats[i], all_scores[i]
             score = math.ceil(score)
+            target_str = target
+            if not self.raw_output:
+                target_str = Fore.BLUE + Style.BRIGHT + target + Style.RESET_ALL
+            print(f"Equipment for {target_str}:")
             print(delim)
             print(f"Rank {len(all_scores) - i} ({self.all_equipment[equip[0]].material})" + ":\n" +
                   self.generate_table(equip).__str__())
@@ -260,15 +263,15 @@ class EquipmentHandler:
                 if not self.raw_output:
                     for i in range(len(stat_diffs)):
                         if weights[i] > 0:
-                            stat_diffs[i] = pos_neg_color(stat_diffs[i]) + str(stat_diffs[i]) + Style.RESET_ALL
-                    p_table = PrettyTable(header)
-                    p_table.add_row(stat_diffs)
-                    target_str = target
-                    if not self.raw_output:
-                        target_str = Fore.BLUE + Style.BRIGHT + target + Style.RESET_ALL
-                    print(f"Stat changes for {target_str} with score delta " +
-                          f"{pos_neg_color(score - owner_score) + str(score - owner_score) + Style.RESET_ALL}:\n" +
-                          p_table.__str__())
+                            stat_diffs[i] = pos_neg_color(stat_diffs[i]) + str(stat_diffs[i]) + \
+                            Style.RESET_ALL
+                p_table = PrettyTable(header)
+                p_table.add_row(stat_diffs)
+                print(f"Stat changes with score delta " + \
+                      (pos_neg_color(score - owner_score) if not self.raw_output else '') + \
+                      str(score - owner_score) + \
+                      (Style.RESET_ALL if not self.raw_output else '') + ":\n" + \
+                      p_table.__str__())
         print(delim)
 
     def generate_table(self, indices, sort=False):

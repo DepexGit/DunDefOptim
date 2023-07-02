@@ -3,25 +3,42 @@ from collections import defaultdict
 
 # path to compressed save file
 # change this to point to current game installation directory
-INPUT_FILE_PATH = "PATH/TO/YOUR/STEAM/" + \
+INPUT_FILE_PATH = "/media/christian/SSD/Windows/Steam/" + \
                   "steamapps/common/Dungeon Defenders/Binaries/Win32/DunDefHeroes.dun".replace("/", sep)
 # path to decompressed save file
 DECOMP_FILE_PATH = "data/DunDefHeroes.decomp".replace("/", sep)
 # path to file storing pickle dumb of pre initialized EquipmentHandler
 EQUIP_FILE_PATH = "data/equip.bin".replace("/", sep)
 # maps quality ids to set bonus, max stat bonus and quality name
-QUALITY_PROPERTIES = defaultdict(lambda: [1.25, 360, "Low"])
-QUALITY_PROPERTIES[13] = [1.3, 360, "Myth"]
-QUALITY_PROPERTIES[14] = [1.33, 420, "Trans"]
-QUALITY_PROPERTIES[15] = [1.36, 500, "Sup"]
-QUALITY_PROPERTIES[16] = [1.4, 600, "Ult"]
-QUALITY_PROPERTIES[17] = [1.4, 600, "Ult93"]
-QUALITY_PROPERTIES[18] = [1.4, 700, "Ult+"]
-QUALITY_PROPERTIES[19] = [1.4, 999, "Ult++"]
+QUALITY_PROPERTIES = defaultdict(lambda: [1.25, 360, "Low"], 
+        {13: [1.3, 360, "Myth"],
+         14: [1.33, 420, "Trans"],
+         15: [1.36, 500, "Sup"],
+         16: [1.4, 600, "Ult"],
+         17: [1.4, 600, "Ult93"],
+         18: [1.4, 700, "Ult+"],
+         19: [1.4, 999, "Ult++"]})
+# maps class ids to their names
+CLASS_NAMES = {
+    "Recruit": "Monk",
+    "Monkette": "Monk",
+    "Apprentice": "Mage",
+    "Sorceress": "Mage",
+    "Squire": "Squire",
+    "LadyKnight": "Squire",
+    "Initiate": "Hunter",
+    "Hunter": "Hunter",
+    "RobotGirl": "SeriesEV",
+    "Jester": "Jester",
+    "Summoner": "Summoner",
+    "Barbarian": "Barbarian",
+    "Hermit": "Hermit"}
 # maps weapon class name to possible weapon id strings
 WEAPON_NAMES = {
-    "Monk": ["Spear", "CardboardTube", "Weapons.Campaign.Monk", "LavaChakram", "ChickenBallBlaster"],
-    "Mage": ["Staff", "Sceptre", "Weapon.Apprentice", "Weapons.Challenge.Apprentice", "NorthPole"],
+    "Monk": ["Spear", "CardboardTube", "Weapons.Campaign.Monk", "LavaChakram", "ChickenBallBlaster",
+             "TurtlePoleArm"],
+    "Mage": ["Staff", "Sceptre", "Weapon.Apprentice", "Weapons.Challenge.Apprentice", "NorthPole",
+             "Weapons.Sandstorm"],
     "Squire": ["Broadsword", "SquireSword", "Weapons.Campaign.Squire", "Weapons.Squire",
                "IceBlade", "Equipment.Squire", "SquireEquipment", "Squire_Sword"],
     "Hunter": ["Crossbow", "Weapon.Huntress", "ForestBow", "Equipment.Huntress",
@@ -49,7 +66,8 @@ CHAR_SLOTS = {
     "Barbarian": [["Squire"], ["Squire"], ["Pet"]],
     "Jester": [["Squire", "Hunter", "Monk", "Mage"], ["Squire", "Hunter", "Monk", "Mage"], ["Pet"]],
     "SeriesEV": [["Hunter", "Mage"], ["Hunter", "Mage"], ["Pet"]],
-    "Summoner": [["Pet"], ["Pet"]]}
+    "Summoner": [["Pet"], ["Pet"]],
+    "Hermit": [["Monk"], ["Pet"]]}
 # contains every armor material
 ARMOR_MATERIALS = ["Leather", "Mail", "Pristine", "Chain", "Plate"]
 # bytes prefix used to indentify equipment in save file

@@ -310,25 +310,9 @@ class DataHandler:
         stop = False
         while index < delim_index and found:
             class_id = self.extract_string(index + len(search_string))
-            class_name = ""
-            if class_id == "Recruit" or class_id == "Monkette":
-                class_name = "Monk"
-            elif class_id == "Apprentice" or class_id == "Sorceress":
-                class_name = "Mage"
-            elif class_id == "Squire" or class_id == "LadyKnight":
-                class_name = "Squire"
-            elif class_id == "Initiate" or class_id == "Hunter":
-                class_name = "Hunter"
-            elif class_id == "RobotGirl":
-                class_name = "SeriesEV"
-            elif class_id == "Jester":
-                class_name = "Jester"
-            elif class_id == "Summoner":
-                class_name = "Summoner"
-            elif class_id == "Barbarian":
-                class_name = "Barbarian"
-            else:
+            if class_id not in CLASS_NAMES:
                 raise Exception(f"Unknown character class '{class_id}'")
+            class_name = CLASS_NAMES[class_id]
             name_index, _ = self.find_next_string_index([0] * 2, index, raw=True, reverse=True)
             name_index, _ = self.find_next_string_index([0] * 3, name_index, raw=True, reverse=True)
             name = self.extract_string(name_index + 3)
