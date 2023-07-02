@@ -53,7 +53,7 @@ EQUIPMENT_TYPES = {
 ARMOR_SLOTS = ["Helmet", "Torso", "Gauntlet", "Boots"]
 # maps accessory slots to possible id strings
 ACCESSORY_SLOTS = {
-    "Hat": ["Hat", "Bow", "Brooch", "HeadDress", "Feather", "Quill", "Item0"],
+    "Hat": ["Hat", "Bow", "Brooch", "HeadDress", "Feather", "Quill", "Item0", "ElfCrown"],
     "Mask": ["Beard", "BunnyWhiskers", "Mask", "Glasses", "PiratePatch", "Nose"],
     "Bracers": ["Bracer"],
     "Shield": ["Buckler", "Shield"]}
