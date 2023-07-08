@@ -7,7 +7,7 @@ Equipment optimization tool for Dungeon Defenders 1
 2. Install [pip](https://pypi.org/project/pip/)
 3. Download this repository
 4. Install requirements: `pip install -r requirements.txt`
-5. Set your save file location by modifying *INPUT_FILE_PATH* in *src/consts.py*. It should usually be enough to add the path to your Steam root directory containing your Dungeon Defenders installation to the first line.
+5. Set your save file location by modifying *INPUT_FILE_PATH* in *src/optim_targets.py*. It should usually be enough to add the path to your Steam root directory containing your Dungeon Defenders installation to the first line.
 
 ## Usage
 Optimal equipment is determined by maximizing the weighted sum of all stats. E.g.: If your weights are 1.0 for tower damage and 0.5 for 

@@ -98,6 +98,20 @@ class Equipment:
             for d in path:
                 location += "/" + d
         return all_vals + [location]
+    
+    def get_upgrade_costs(self):
+        """
+        Returns the total mana cost to fully upgrade this item.
+        
+        Returns:
+            float: The cost
+        """
+        if self.remaining_upgrades == 0:
+            return 0
+        if self.type == "Accessory":
+            return ACC_UPGRADE_COST
+        return sum((UPGRADE_COST_BASE * level ** UPGRADE_COST_EXP for level in range(self.level,
+                                                                                     self.max_upgrades)))
 
     def get_weighted_score(self, weights):
         """

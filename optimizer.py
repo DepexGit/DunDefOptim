@@ -5,6 +5,7 @@ import time
 import pickle
 from colorama import init as init_colors
 from src.consts import *
+from src.optim_targets import INPUT_FILE_PATH
 from src.equipment_handler import EquipmentHandler
 from src.data_handler import DataHandler
 from src.optim_targets import OPTIM_TARGETS
@@ -82,4 +83,4 @@ if __name__ == "__main__":
         else:
             arg_parser.error("Optimizing with custom options requires weights and a target character")
     elif args.mode == "debug":
-        print(eh.dirs)
+        print(eh.target_classes)

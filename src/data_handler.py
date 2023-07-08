@@ -1,6 +1,7 @@
 import os
 import zlib
 from src.consts import *
+from src.optim_targets import INPUT_FILE_PATH
 from src.equipment import Equipment
 
 
@@ -114,7 +115,7 @@ class DataHandler:
 
     def extract_string(self, index, length=0):
         """
-        Converts the bytes at given index to string, terminates at Null character or at given length
+        Converts the bytes at given index to string, terminates at null character or at given length
 
         Parameters
             index (int): Start index of string
@@ -142,7 +143,7 @@ class DataHandler:
         Creates a dict containing the structure of equipment directories
 
         Returns:
-            dict{int: list[string, int]}: Maps directory id to its name of parent id
+            dict{int: list[string, int]}: Maps directory id to its name and parent id
         """
         last_index = self.last_equipment_index
         last_index = self.find_next_string_index([0], last_index, raw=True)[0]

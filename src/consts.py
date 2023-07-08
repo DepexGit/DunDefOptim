@@ -1,10 +1,6 @@
 from os import sep
 from collections import defaultdict
 
-# path to compressed save file
-# change this to point to current game installation directory
-INPUT_FILE_PATH = "/PATH/TO/YOUR/STEAMDIR" + \
-                  "steamapps/common/Dungeon Defenders/Binaries/Win32/DunDefHeroes.dun".replace("/", sep)
 # path to decompressed save file
 DECOMP_FILE_PATH = "data/DunDefHeroes.decomp".replace("/", sep)
 # path to file storing pickle dumb of pre initialized EquipmentHandler
@@ -97,3 +93,7 @@ MISC_OFFSET_DICT = {
     "posy": [172, 4],
     "posz": [176, 4],
     "name": [220, 4]}
+# values used to calculate equipment upgrade costs
+UPGRADE_COST_BASE = 3646.48407
+UPGRADE_COST_EXP = 1.58700072
+ACC_UPGRADE_COST = 17.9633e9

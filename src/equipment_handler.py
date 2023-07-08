@@ -88,7 +88,10 @@ class EquipmentHandler:
 
         Parameters:
             targets (dict{string: dict{string, float}}): Maps target names to weights for optimization
+            print_all (bool): Print best equipment set for each armor material instead only the top one
         """
+        upgrade_cost = 0
+        upgrade_cost_no_accs = 0
         for target in targets.keys():
             if target not in self.target_classes.keys():
                 raise Exception(f"Unknown optimization target '{target}'")
@@ -102,6 +105,13 @@ class EquipmentHandler:
             equips, score = self.optimize_by_weights(weights, target, print_all)
             for e in equips:
                 self.reserved_equipment[e] = True
+                if target in self.print_targets:
+                    cost = self.all_equipment[e].get_upgrade_costs()
+                    upgrade_cost += cost
+                    upgrade_cost_no_accs += cost if self.all_equipment[e].type != "Accessory" else 0
+        print(f"Estimated upgrade cost for all characters (without accessories): " +
+              f"{np.round(upgrade_cost / 1e9, 2)}B" + 
+              f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
 
     def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=[]):
         """
@@ -206,7 +216,7 @@ class EquipmentHandler:
         Prints equipment found during optimization
 
         Parameters:
-            all_equips (list[list[int]]): Contains indices equipment found during optimization runs
+            all_equips (list[list[int]]): Contains indices of equipment found during optimization runs
             all_stats (list[list[float]]): Stats of given equipment
             prev_scores (list[float]): Scores of given equipment sets
             weights (dict{string: float}): Maps stat name to weight
@@ -272,6 +282,11 @@ class EquipmentHandler:
                       str(score - owner_score) + \
                       (Style.RESET_ALL if not self.raw_output else '') + ":\n" + \
                       p_table.__str__())
+                upgrade_cost = sum([self.all_equipment[e].get_upgrade_costs() for e in equip])
+                upgrade_cost_no_accs = sum([self.all_equipment[e].get_upgrade_costs() \
+                    if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
+                print(f"Estimated upgrade cost (without accessories): {np.round(upgrade_cost / 1e9, 2)}B" + 
+                      f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
         print(delim)
 
     def generate_table(self, indices, sort=False):

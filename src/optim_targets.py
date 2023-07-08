@@ -1,3 +1,10 @@
+from os import sep
+
+# path to compressed save file
+# change this to point to current game installation directory
+INPUT_FILE_PATH = "/PATH/TO/YOUR/STEAM/" + \
+        "steamapps/common/Dungeon Defenders/Binaries/Win32/DunDefHeroes.dun".replace("/", sep)
+
 """
 Set your desired weights for every character whose gear you want to optimize here.
 Stats with no weights assigned to them will be set to 0.
