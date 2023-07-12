@@ -70,6 +70,9 @@ class EquipmentHandler:
             cur_index, found = self.data_handler.find_next_string_index(
                 EQUIPMENT_MARKER, start_index=cur_index, raw=True, limit=self.last_item_index - cur_index)
             if cur_equip is not None:
+                # some event items are bugged and show way too many open upgrades
+                if cur_equip.level > 700:
+                    cur_equip.level = cur_equip.max_upgrades
                 if cur_equip.owner == "Tavern Floor":
                     on_floor = True
                 if on_floor and cur_equip.dir_id == 2 ** 32 - 1 and \
@@ -79,7 +82,7 @@ class EquipmentHandler:
                 found_equip.append(cur_equip)
         return found_equip
 
-    def optimize_for_targets(self, targets, print_all=False):
+    def optimize_for_targets(self, targets, print_all=False, upgrade_accs=True):
         """
         Finds a set of equipment for each given target by optimizing for given weights.
         Targets have descending priority for equipment by their order in given targets dict.
@@ -89,6 +92,7 @@ class EquipmentHandler:
         Parameters:
             targets (dict{string: dict{string, float}}): Maps target names to weights for optimization
             print_all (bool): Print best equipment set for each armor material instead only the top one
+            upgrade_accs (bool): If False: Only use current stats for accessories
         """
         upgrade_cost = 0
         upgrade_cost_no_accs = 0
@@ -102,7 +106,7 @@ class EquipmentHandler:
             for i, stat in enumerate(list(STAT_OFFSET_DICT.keys())[4:]):
                 if stat in targets[target]:
                     weights[i] = targets[target][stat]
-            equips, score = self.optimize_by_weights(weights, target, print_all)
+            equips, score = self.optimize_by_weights(weights, target, print_all, upgrade_accs=upgrade_accs)
             for e in equips:
                 self.reserved_equipment[e] = True
                 if target in self.print_targets:
@@ -113,7 +117,7 @@ class EquipmentHandler:
               f"{np.round(upgrade_cost / 1e9, 2)}B" + 
               f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
 
-    def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=[]):
+    def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=[], upgrade_accs=True):
         """
         Finds optimal equipment by maximizing a weighted score of all stats.
         Only considers possible sets of the same material for armor. Prints optimization
@@ -125,6 +129,7 @@ class EquipmentHandler:
             print_all (bool): Print best equipment set for each armor material instead only the top one
             cannot_steal (bool): Ignore items already equipped on another character
             protected (list[string]): Characters whose items will not be reassigned
+            upgrade_accs (bool): If False: Only use current stats for accessories
 
         Returns:
             list[int]: Indices of equipment found during optimization
@@ -137,7 +142,7 @@ class EquipmentHandler:
         for equip_mat in ARMOR_MATERIALS:
             all_equips, all_stats, all_scores = self.optimize_for_slots(
                 ARMOR_SLOTS, weights, target, cannot_steal, protected,
-                all_equips, all_stats, all_scores, equip_mat)
+                all_equips, all_stats, all_scores, equip_mat, upgrade_accs)
         all_equips = [e for _, e in sorted(zip(all_scores, all_equips))]
         all_stats = [e for _, e in sorted(zip(all_scores, all_stats))]
         all_scores = sorted(all_scores)
@@ -148,18 +153,18 @@ class EquipmentHandler:
                 acc_slots.append("Shield")
             all_equips, all_stats, all_scores = self.optimize_for_slots(
                 acc_slots, weights, target, cannot_steal, protected,
-                all_equips, all_stats, all_scores)
+                all_equips, all_stats, all_scores, upgrade_accs=upgrade_accs)
             if max(weights[:4]) <= 0:
                 # pets and weapons
                 all_equips, all_stats, all_scores = self.optimize_for_slots(
                     CHAR_SLOTS[self.target_classes[target]], weights, target, cannot_steal, protected,
-                    all_equips, all_stats, all_scores)
+                    all_equips, all_stats, all_scores, upgrade_accs=upgrade_accs)
         if target in self.print_targets:
-            self.print_optimization_results(all_equips, all_stats, all_scores, weights, target, print_all)
+            self.print_optimization_results(all_equips, all_stats, all_scores, weights, target, print_all, upgrade_accs)
         return all_equips[-1], all_scores[-1]
 
     def optimize_for_slots(self, slots, weights, target, cannot_steal, protected,
-                           prev_equips, prev_stats, prev_scores, equip_mat=None):
+                           prev_equips, prev_stats, prev_scores, equip_mat=None, upgrade_accs=True):
         """
         Finds optimal equipment for every given slot and weight.
 
@@ -173,6 +178,7 @@ class EquipmentHandler:
             prev_equips (list[list[int]]): Indices of equipment from previous optimization
             prev_stats (list[list[float]]): Stats from previous optimization
             prev_scores (list[float]): Scores from previous optimization
+            upgrade_accs (bool): If False: Only use current stats for accessories
 
         Returns:
             list[list[int]]: prev_equips with newly found Equipment appended
@@ -191,7 +197,7 @@ class EquipmentHandler:
                    equipment.owner != "" and (equipment.owner != target) and cannot_steal or \
                    equipment.owner in protected or self.reserved_equipment[i]:
                     continue
-                cur_score, cur_stats = equipment.get_weighted_score(weights)
+                cur_score, cur_stats = equipment.get_weighted_score(weights, upgrade_accs)
                 if cur_score > best_score and i not in best_equips:
                     best_score = cur_score
                     best_index = i
@@ -211,7 +217,7 @@ class EquipmentHandler:
                 prev_stats[i] = [eq_s + prev_s for eq_s, prev_s in zip(equip_stats, prev_stats[i])]
         return prev_equips, prev_stats, prev_scores
 
-    def print_optimization_results(self, all_equips, all_stats, all_scores, weights, target, print_all=False):
+    def print_optimization_results(self, all_equips, all_stats, all_scores, weights, target, print_all=False, upgrade_accs=True):
         """
         Prints equipment found during optimization
 
@@ -222,6 +228,7 @@ class EquipmentHandler:
             weights (dict{string: float}): Maps stat name to weight
             target (string): Target character for optimization
             print_all (bool): Print best equipment set for each armor material instead only the top one
+            upgrade_accs (bool): If False: Only use current stats for accessories
         """
         def pos_neg_color(num):
             color = Fore.YELLOW
@@ -265,7 +272,7 @@ class EquipmentHandler:
                     if e.owner == target and not \
                             (is_dps_target and (e.type == "Weapon" or e.type == "Familiar")) and not \
                             (self.armor_only and e.type != "Armor"):
-                        item_score, item_stats = e.get_weighted_score(weights)
+                        item_score, item_stats = e.get_weighted_score(weights, upgrade_accs)
                         owner_stats += np.array(item_stats)
                         owner_score += item_score
                 owner_score = math.ceil(owner_score)

@@ -253,35 +253,22 @@ class DataHandler:
         ret_equip.desc_string = id_string
         # init main stats
         equip_stats = {}
-        for stat in STAT_OFFSET_DICT.keys():
-            offset, length = STAT_OFFSET_DICT[stat]
+        for stat, (offset, length) in STAT_OFFSET_DICT.items():
+            #offset, length = STAT_OFFSET_DICT[stat]
             equip_stats[stat] = bytes_to_int(
                 self.data[start_index + offset: start_index + offset + length])
         ret_equip.stat_dict = equip_stats
         # init misc stats
-        offset, length = MISC_OFFSET_DICT["level"]
-        ret_equip.level = bytes_to_int(
-            self.data[start_index + offset: start_index + offset + length], raw=True)
-        offset, length = MISC_OFFSET_DICT["max_upgrades"]
-        ret_equip.max_upgrades = bytes_to_int(
-            self.data[start_index + offset: start_index + offset + length], raw=True)
-        offset, length = MISC_OFFSET_DICT["quality"]
-        ret_equip.quality = bytes_to_int(
-            self.data[start_index + offset: start_index + offset + length], raw=True)
-        offset, length = MISC_OFFSET_DICT["posx"]
-        ret_equip.pos_x = bytes_to_int(
-            self.data[start_index + offset: start_index + offset + length], raw=True)
-        offset, length = MISC_OFFSET_DICT["posy"]
-        ret_equip.pos_y = bytes_to_int(
-            self.data[start_index + offset: start_index + offset + length], raw=True)
-        offset, length = MISC_OFFSET_DICT["posz"]
-        ret_equip.pos_z = bytes_to_int(
-            self.data[start_index + offset: start_index + offset + length], raw=True)
+        for stat, (offset, length) in MISC_OFFSET_DICT.items():
+            if stat == "name":
+                continue
+            setattr(ret_equip, stat, bytes_to_int(
+            self.data[start_index + offset: start_index + offset + length], raw=True))
         # find current position of item
         is_not_used = True if start_index > self.level_completion_index else False
         dir_id = bytes_to_int(self.data[dir_index: dir_index + 4], raw=True)
         if is_not_used and dir_id == int("ffffffff", 16) and \
-                ret_equip.pos_x != 0 or ret_equip.pos_y != 0 or ret_equip.pos_z != 0:
+                (ret_equip.pos_x != 0 or ret_equip.pos_y != 0 or ret_equip.pos_z != 0):
             ret_equip.owner = "Tavern Floor"
         elif is_not_used:
             ret_equip.dir_id = dir_id

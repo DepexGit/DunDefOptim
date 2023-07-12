@@ -113,13 +113,14 @@ class Equipment:
         return sum((UPGRADE_COST_BASE * level ** UPGRADE_COST_EXP for level in range(self.level,
                                                                                      self.max_upgrades)))
 
-    def get_weighted_score(self, weights):
+    def get_weighted_score(self, weights, upgrade_accs=True):
         """
         Simulates upgrading the item to max rank, stats with higher weights have priority
         Maximizes resistances for non builders
 
         Parameters:
             weights (dict{string : float}): Maps stat types to weights
+            upgrade_accs (bool): If False: Only use current stats for accessories
 
         Returns:
             int: Weighted sum of all stats
@@ -140,22 +141,23 @@ class Equipment:
                 return 0, effective_stats
             remaining_upgrades = self.remaining_upgrades_res
         # simulate upgrading
-        while remaining_upgrades > 0 and max(tmp_weights) > 0:
-            best_stat = np.argmax(np.array(tmp_weights))
-            if effective_stats[best_stat] == 0:
+        if not self.type == "Accessory" or upgrade_accs:
+            while remaining_upgrades > 0 and max(tmp_weights) > 0:
+                best_stat = np.argmax(np.array(tmp_weights))
+                if effective_stats[best_stat] == 0:
+                    tmp_weights[best_stat] = -1
+                    continue
+                quality_cap = QUALITY_PROPERTIES[self.quality][1]
+                if self.type == "Familiar" and self. quality == 0:
+                    if "Diamond" in self.desc_string:
+                        quality_cap = 800
+                    elif "Treadmill_on_itself" in self.desc_string:
+                        quality_cap = 700
+                free_upgrades = max(quality_cap - effective_stats[best_stat], 0)
+                actual_upgrades = min(remaining_upgrades, free_upgrades)
+                effective_stats[best_stat] += actual_upgrades
+                remaining_upgrades -= actual_upgrades
                 tmp_weights[best_stat] = -1
-                continue
-            quality_cap = QUALITY_PROPERTIES[self.quality][1]
-            if self.type == "Familiar" and self. quality == 0:
-                if "Diamond" in self.desc_string:
-                    quality_cap = 800
-                elif "Treadmill_on_itself" in self.desc_string:
-                    quality_cap = 700
-            free_upgrades = max(quality_cap - effective_stats[best_stat], 0)
-            actual_upgrades = min(remaining_upgrades, free_upgrades)
-            effective_stats[best_stat] += actual_upgrades
-            remaining_upgrades -= actual_upgrades
-            tmp_weights[best_stat] = -1
         effective_stats = np.array(effective_stats)
         if self.type == "Armor":
             quality_mult = QUALITY_PROPERTIES[self.quality][0]

@@ -89,9 +89,9 @@ MISC_OFFSET_DICT = {
     "level": [114, 4],
     "quality": [145, 1],
     "max_upgrades": [164, 4],
-    "posx": [168, 4],
-    "posy": [172, 4],
-    "posz": [176, 4],
+    "pos_x": [168, 4],
+    "pos_y": [172, 4],
+    "pos_z": [176, 4],
     "name": [220, 4]}
 # values used to calculate equipment upgrade costs
 UPGRADE_COST_BASE = 3646.48407

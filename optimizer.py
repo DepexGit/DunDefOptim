@@ -34,6 +34,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("-f", "--full", action="store_true", help="Print best combination for each material")
     arg_parser.add_argument("-n", "--num_threads", type=int, default=-1, help="Number of worker threads to use")
     arg_parser.add_argument("-a", "--armor_only", action="store_true", help="Only optimize armors")
+    arg_parser.add_argument("-N", "--no_accessory_upgrades", action="store_true", help="Do not upgrade accessories, use current stats instead")
     arg_parser.add_argument("-p", "--print_targets", nargs="+", help="Only output optimization results" +
                             " for given targets")
     args = arg_parser.parse_args()
@@ -72,14 +73,14 @@ if __name__ == "__main__":
                     if not re.match(r"\d+(\.\d*)?", elem):
                         arg_parser.error(f"Weights must be numbers. '{elem}' is not a number")
                     weight_dict[cur_stat] = float(elem)
-            eh.optimize_for_targets({args.target: weight_dict}, args.full)
+            eh.optimize_for_targets({args.target: weight_dict}, args.full, not args.no_accessory_upgrades)
         elif not args.target and not args.weights:
             if args.print_targets is not None:
                 for target in args.print_targets:
                     if target not in list(OPTIM_TARGETS.keys()):
                         raise Exception(f"Unknown target '{target}'")
                 eh.print_targets = args.print_targets
-            eh.optimize_for_targets(OPTIM_TARGETS, args.full)
+            eh.optimize_for_targets(OPTIM_TARGETS, args.full, not args.no_accessory_upgrades)
         else:
             arg_parser.error("Optimizing with custom options requires weights and a target character")
     elif args.mode == "debug":
