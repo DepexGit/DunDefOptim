@@ -227,7 +227,7 @@ class EquipmentHandler:
         Parameters:
             all_equips (list[list[int]]): Contains indices of equipment found during optimization runs
             all_stats (list[list[float]]): Stats of given equipment
-            prev_scores (list[float]): Scores of given equipment sets
+            all_scores (list[float]): Scores of given equipment sets
             weights (dict{string: float}): Maps stat name to weight
             target (string): Target character for optimization
             print_all (bool): Print best equipment set for each armor material instead only the top one

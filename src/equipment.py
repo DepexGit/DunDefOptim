@@ -186,7 +186,7 @@ class Equipment:
 
     def __str__(self):
         """
-        Creats PrettyTable and adds equipments stats as a row
+        Creates PrettyTable and adds equipments stats as a row
 
         Returns:
             PrettyTable: Contains stats
