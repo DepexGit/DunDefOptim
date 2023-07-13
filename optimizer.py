@@ -17,14 +17,15 @@ if __name__ == "__main__":
         stat_string += key + ", "
     stat_string = stat_string[:-2]
     arg_parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    arg_parser.add_argument("mode", choices=["update", "print", "optimize", "debug"],
-                            help="Selects task to execute.\n" +
-                                 "update:    Decompress save file from game folder." +
+    arg_parser.add_argument("mode", choices=["update", "print", "find_obsoletes", "optimize", "debug"],
+                            help="Selects task to execute:\n" +
+                                 "update:           Decompress save file from game folder." +
                                  "Use 'Export to open' in-game before running this command\n" +
-                                 "print:     Print a list of all equipment in save file.\n" +
-                                 "optimize:  Find optimal equipment from save file." +
+                                 "print:            Print a list of all equipment in save file.\n" +
+                                 "find_obsoletes:   List all pareto dominated equipment.\n" +
+                                 "optimize:         Find optimal equipment from save file." +
                                  "Modify 'OPTIM_TARGETS' in optim_targets.py or\n" +
-                                 "           use -w and -t to set optimization parameters")
+                                 "                  use -w and -t to set optimization parameters")
     arg_parser.add_argument("-r", "--raw", action="store_true", help="Only output ASCII characters")
     arg_parser.add_argument("-t", "--target", help="Select character as optimization target")
     arg_parser.add_argument("-w", "--weights", nargs="+",
@@ -36,6 +37,7 @@ if __name__ == "__main__":
                             help="Do not upgrade accessories, use current stats instead")
     arg_parser.add_argument("-p", "--print_targets", nargs="+", help="Only output optimization results" +
                                                                      " for given targets")
+    arg_parser.add_argument("-P", "--print_types", nargs="+", help="Only output equipment matching the given types")
     args = arg_parser.parse_args()
 
     init_colors(autoreset=True)
@@ -57,8 +59,17 @@ if __name__ == "__main__":
         raise
     eh.raw_output = args.raw
     eh.armor_only = args.armor_only
+    if args.print_types is not None:
+        type_filter = []
+        for equip_type in args.print_types:
+            if equip_type not in EQUIPMENT_TYPES.keys():
+                arg_parser.error(f"Unknown equipment type '{equip_type}'")
+            type_filter.append(equip_type)
+        eh.print_type_filter = type_filter
     if args.mode == "print":
         print(eh)
+    elif args.mode == "find_obsoletes":
+        eh.find_obsolete_equipment()
     elif args.mode == "optimize":
         if args.target and args.weights:
             weight_dict = {}

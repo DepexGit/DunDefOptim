@@ -34,6 +34,7 @@ class EquipmentHandler:
         self.armor_only = armor_only
         self.target_classes = self.data_handler.get_all_target_classes()
         self.print_targets = list(self.target_classes.keys())
+        self.print_type_filter = list(EQUIPMENT_TYPES.keys())
         if self.num_threads == -1:
             self.num_threads = os.cpu_count()
         worker_pool = multiprocessing.Pool(processes=self.num_threads)
@@ -219,6 +220,25 @@ class EquipmentHandler:
                 prev_stats[i] = [eq_s + prev_s for eq_s, prev_s in zip(equip_stats, prev_stats[i])]
         return prev_equips, prev_stats, prev_scores
 
+    def find_obsolete_equipment(self):
+        """
+        Finds all equipment that is pareto dominated by at least one other equipment of the same type, slot
+        and material. This ignores resistances and all damage related values on weapons and pets.
+        """
+        obsolete_equip = []
+        for i, first_equip in enumerate(self.all_equipment):
+            for j, second_equip in enumerate(self.all_equipment):
+                if j != i and first_equip.type == second_equip.type \
+                        and first_equip.slot == second_equip.slot \
+                        and first_equip.material == second_equip.material \
+                        and second_equip.pareto_dominates(first_equip):
+                    obsolete_equip.append(i)
+                    break
+        if len(obsolete_equip) == 0:
+            print("No obsolete equipment found!")
+        else:
+            print(f"{self.generate_table(obsolete_equip)}\nTotals:\n{self.generate_counts_table(obsolete_equip)}")
+
     def print_optimization_results(self, all_equips, all_stats, all_scores, weights, target, print_all=False,
                                    upgrade_accs=True):
         """
@@ -306,6 +326,7 @@ class EquipmentHandler:
         Generates PrettyTable for equipment with given indices
 
         Parameters:
+            sort (bool): If true: Sort equipment by its index
             indices (list[int]): Indices for equipment
 
         Returns:
@@ -319,7 +340,9 @@ class EquipmentHandler:
         else:
             all_equip = self.all_equipment
         for i in indices:
-            p_table.add_row(all_equip[i].get_property_list(self.dirs))
+            cur_equip = all_equip[i]
+            if cur_equip.type in self.print_type_filter:
+                p_table.add_row(cur_equip.get_property_list(self.dirs))
         if self.raw_output:
             return p_table.__str__()
         table = ""
@@ -330,6 +353,32 @@ class EquipmentHandler:
         table = table[:-1]
         return table
 
+    def generate_counts_table(self, indices=None):
+        """
+        Generates a PrettyTable containing the number of equipment pieces for each type
+
+        Parameters:
+            indices (list[int]): Indices of equipment included in the count. If this is None,
+            all equipment will be used
+
+        Returns:
+            PrettyTable: The generated table
+        """
+        if indices is None:
+            indices = np.arange(len(self.all_equipment))
+        type_counts = {}
+        for equip_type in EQUIPMENT_TYPES.keys():
+            type_counts[equip_type] = 0
+        for i in indices:
+            equip = self.all_equipment[i]
+            for equip_type in EQUIPMENT_TYPES.keys():
+                if equip.type == equip_type:
+                    type_counts[equip.type] += 1
+                    break
+        p_table = PrettyTable(type_counts.keys())
+        p_table.add_row(type_counts.values())
+        return p_table
+
     def __str__(self):
         """
         Generates PrettyTable containing every equipment in self.all_equipment
@@ -338,14 +387,5 @@ class EquipmentHandler:
             string: String form of generated PrettyTable
         """
         table_string = self.generate_table(list(range(len(self.all_equipment))), sort=True)
-        type_counts = {}
-        for equip_type in EQUIPMENT_TYPES.keys():
-            type_counts[equip_type] = 0
-        for equip in self.all_equipment:
-            for equip_type in EQUIPMENT_TYPES.keys():
-                if equip.type == equip_type:
-                    type_counts[equip.type] += 1
-                    break
-        p_table = PrettyTable(type_counts.keys())
-        p_table.add_row(type_counts.values())
+        p_table = self.generate_counts_table()
         return table_string + "\nTotals:\n" + p_table.__str__()

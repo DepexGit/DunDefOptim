@@ -156,7 +156,7 @@ class Equipment:
         Calculates equipment stats at maximum level by distributing all remaining levels according to
         given weights.
 
-        Args:
+        Parameters:
             remaining_upgrades (int): Number of available upgrades
             weights (dict{string : float}): Maps stat types to weights
             upgrade_accs (bool): If False: Do not upgrade accessories
@@ -184,6 +184,21 @@ class Equipment:
             remaining_upgrades -= actual_upgrades
             weights[best_stat] = -float_info.max
         return np.array(effective_stats)
+
+    def pareto_dominates(self, other):
+        """
+        Checks if this equipment pareto dominates given other equipment.This ignores resistances and
+        all damage related values on weapons and pets.
+
+        Parameters:
+            other (equipment): Equipment for comparison
+
+        Returns:
+            bool: True if and only if this pareto dominates other
+        """
+        own_stats = np.array(list(self.stat_dict.values())[4:])
+        other_stats = np.array(list(other.stat_dict.values())[4:])
+        return np.sum(own_stats >= other_stats) == len(own_stats)
 
     def __str__(self):
         """
