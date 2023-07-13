@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import math
 from prettytable import PrettyTable
+from sys import float_info
 from src.consts import *
 
 
@@ -169,7 +170,7 @@ class Equipment:
         while remaining_upgrades > 0 and max(weights) > 0:
             best_stat = np.argmax(np.array(weights))
             if effective_stats[best_stat] == 0:
-                weights[best_stat] = -1
+                weights[best_stat] = -float_info.max
                 continue
             quality_cap = QUALITY_PROPERTIES[self.quality][1]
             if self.type == "Familiar" and self.quality == 0:
