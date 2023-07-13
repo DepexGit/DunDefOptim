@@ -182,7 +182,7 @@ class Equipment:
             actual_upgrades = min(remaining_upgrades, free_upgrades)
             effective_stats[best_stat] += actual_upgrades
             remaining_upgrades -= actual_upgrades
-            weights[best_stat] = -1
+            weights[best_stat] = -float_info.max
         return np.array(effective_stats)
 
     def __str__(self):
