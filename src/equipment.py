@@ -10,6 +10,7 @@ class Equipment:
     Holds all necessary information for an instance equipment and provides methods to estimate
     its value for optimization
     """
+
     def __init__(self, equip_type, equip_slot, armor_material=None):
         """
         Constructor for Equipment class.
@@ -46,7 +47,7 @@ class Equipment:
         resistances = list(self.stat_dict.values())[:4]
         res_target = max(0, 16 - self.quality) + 29
         # assume pre upgraded items are good
-        if not(min(resistances) > 20 and self.level > 100):
+        if not (min(resistances) > 20 and self.level > 100):
             # simulate capping resistances
             for res in resistances:
                 # missing resistance -> useless
@@ -98,7 +99,7 @@ class Equipment:
             for d in path:
                 location += "/" + d
         return all_vals + [location]
-    
+
     def get_upgrade_costs(self):
         """
         Returns the total mana cost to fully upgrade this item.
@@ -132,33 +133,13 @@ class Equipment:
         if len(weights) != len(self.stat_dict) - 4:
             raise Exception(f"Length of given weights ({len(weights)}) " +
                             f"must match number of stats ({len(self.stat_dict) - 4})")
-        effective_stats = list(self.stat_dict.values())[4:]
-        tmp_weights = copy.deepcopy(weights)
         remaining_upgrades = self.remaining_upgrades
         if max_resistance:
             # item useless for non builder
             if self.remaining_upgrades_res < 0:
-                return 0, effective_stats
+                return 0, list(self.stat_dict.values())[4:]
             remaining_upgrades = self.remaining_upgrades_res
-        # simulate upgrading
-        if not self.type == "Accessory" or upgrade_accs:
-            while remaining_upgrades > 0 and max(tmp_weights) > 0:
-                best_stat = np.argmax(np.array(tmp_weights))
-                if effective_stats[best_stat] == 0:
-                    tmp_weights[best_stat] = -1
-                    continue
-                quality_cap = QUALITY_PROPERTIES[self.quality][1]
-                if self.type == "Familiar" and self. quality == 0:
-                    if "Diamond" in self.desc_string:
-                        quality_cap = 800
-                    elif "Treadmill_on_itself" in self.desc_string:
-                        quality_cap = 700
-                free_upgrades = max(quality_cap - effective_stats[best_stat], 0)
-                actual_upgrades = min(remaining_upgrades, free_upgrades)
-                effective_stats[best_stat] += actual_upgrades
-                remaining_upgrades -= actual_upgrades
-                tmp_weights[best_stat] = -1
-        effective_stats = np.array(effective_stats)
+        effective_stats = self.get_post_upgrade_stats(remaining_upgrades, copy.deepcopy(weights), upgrade_accs)
         if self.type == "Armor":
             quality_mult = QUALITY_PROPERTIES[self.quality][0]
             boosted_stats = effective_stats > 0
@@ -169,6 +150,40 @@ class Equipment:
             return score
         return (score / sum(weights)), [math.ceil(x) for x in effective_stats]
 
+    def get_post_upgrade_stats(self, remaining_upgrades, weights, upgrade_accs):
+        """
+        Calculates equipment stats at maximum level by distributing all remaining levels according to
+        given weights.
+
+        Args:
+            remaining_upgrades (int): Number of available upgrades
+            weights (dict{string : float}): Maps stat types to weights
+            upgrade_accs (bool): If False: Do not upgrade accessories
+
+        Returns:
+            list(int): Contains all post upgrade stats, excluding resistances
+        """
+        effective_stats = list(self.stat_dict.values())[4:]
+        if self.type == "Accessory" and not upgrade_accs:
+            return np.array(effective_stats)
+        while remaining_upgrades > 0 and max(weights) > 0:
+            best_stat = np.argmax(np.array(weights))
+            if effective_stats[best_stat] == 0:
+                weights[best_stat] = -1
+                continue
+            quality_cap = QUALITY_PROPERTIES[self.quality][1]
+            if self.type == "Familiar" and self.quality == 0:
+                if "Diamond" in self.desc_string:
+                    quality_cap = 800
+                elif "Treadmill_on_itself" in self.desc_string:
+                    quality_cap = 700
+            free_upgrades = max(quality_cap - effective_stats[best_stat], 0)
+            actual_upgrades = min(remaining_upgrades, free_upgrades)
+            effective_stats[best_stat] += actual_upgrades
+            remaining_upgrades -= actual_upgrades
+            weights[best_stat] = -1
+        return np.array(effective_stats)
+
     def __str__(self):
         """
         Creats PrettyTable and adds equipments stats as a row
@@ -176,7 +191,7 @@ class Equipment:
         Returns:
             PrettyTable: Contains stats
         """
-        header = ["Type", "Pos", "Material", "Tier"] + list(OFFSET_DICT.keys())[4:] +\
+        header = ["Type", "Pos", "Material", "Tier"] + list(OFFSET_DICT.keys())[4:] + \
                  ["Level"]
         p_table = PrettyTable(header)
         p_table.add_row(self.get_property_list())

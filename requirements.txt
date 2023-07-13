@@ -1,4 +1,4 @@
 numpy
-prettytabl
+prettytable
 argparse
 colorama

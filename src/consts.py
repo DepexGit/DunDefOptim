@@ -6,14 +6,14 @@ DECOMP_FILE_PATH = "data/DunDefHeroes.decomp".replace("/", sep)
 # path to file storing pickle dumb of pre initialized EquipmentHandler
 EQUIP_FILE_PATH = "data/equip.bin".replace("/", sep)
 # maps quality ids to set bonus, max stat bonus and quality name
-QUALITY_PROPERTIES = defaultdict(lambda: [1.25, 360, "Low"], 
-        {13: [1.3, 360, "Myth"],
-         14: [1.33, 420, "Trans"],
-         15: [1.36, 500, "Sup"],
-         16: [1.4, 600, "Ult"],
-         17: [1.4, 600, "Ult93"],
-         18: [1.4, 700, "Ult+"],
-         19: [1.4, 999, "Ult++"]})
+QUALITY_PROPERTIES = defaultdict(lambda: [1.25, 360, "Low"],
+                                 {13: [1.3, 360, "Myth"],
+                                  14: [1.33, 420, "Trans"],
+                                  15: [1.36, 500, "Sup"],
+                                  16: [1.4, 600, "Ult"],
+                                  17: [1.4, 600, "Ult93"],
+                                  18: [1.4, 700, "Ult+"],
+                                  19: [1.4, 999, "Ult++"]})
 # maps class ids to their names
 CLASS_NAMES = {
     "Recruit": "Monk",

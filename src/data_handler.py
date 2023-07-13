@@ -29,6 +29,7 @@ class DataHandler:
     """
     Holds raw save file data and provides methods for parsing it.
     """
+
     def __init__(self, path=DECOMP_FILE_PATH, compressed=True):
         """
         Constructor for DataHandler class.
@@ -41,7 +42,7 @@ class DataHandler:
             with open(path, "rb") as save_file:
                 self.data = save_file.read()
         except FileNotFoundError:
-            print (f"Could not open file {path}. Always run 'update' before any other option")
+            print(f"Could not open file {path}. Always run 'update' before any other option")
             raise
         self.level_completion_index = 0
         self.last_equipment_index = 0
@@ -62,7 +63,7 @@ class DataHandler:
         """
         if not os.path.exists(INPUT_FILE_PATH):
             raise Exception("Could not find save file. Change 'INPUT_FILE_PATH'" +
-                            "in src/consts.py to the appropriate location")
+                            "in src/optim_targets.py to the appropriate location")
         uncompressed_bytes = self.data[0:0]
         zlib_header = [120, 156]
         index, found = self.find_next_string_index(zlib_header, 0, raw=True, limit=len(self.data))
@@ -173,9 +174,9 @@ class DataHandler:
             int: Index of last equipment
         """
         limit_index = self.find_next_string_index(
-                "DunDefArchetypes.EnemyGoblin", limit=len(self.data))[0]
+            "DunDefArchetypes.EnemyGoblin", limit=len(self.data))[0]
         start_index = self.find_next_string_index(
-                EQUIPMENT_MARKER, limit_index, reverse=True, raw=True, limit=len(self.data))[0]
+            EQUIPMENT_MARKER, limit_index, reverse=True, raw=True, limit=len(self.data))[0]
         cur_index = start_index + MISC_OFFSET_DICT["name"][0] + 5
         for _ in range(2):
             string_length = bytes_to_int(self.data[cur_index: cur_index + 4], raw=True)
@@ -254,7 +255,6 @@ class DataHandler:
         # init main stats
         equip_stats = {}
         for stat, (offset, length) in STAT_OFFSET_DICT.items():
-            #offset, length = STAT_OFFSET_DICT[stat]
             equip_stats[stat] = bytes_to_int(
                 self.data[start_index + offset: start_index + offset + length])
         ret_equip.stat_dict = equip_stats
@@ -263,7 +263,7 @@ class DataHandler:
             if stat == "name":
                 continue
             setattr(ret_equip, stat, bytes_to_int(
-            self.data[start_index + offset: start_index + offset + length], raw=True))
+                self.data[start_index + offset: start_index + offset + length], raw=True))
         # find current position of item
         is_not_used = True if start_index > self.level_completion_index else False
         dir_id = bytes_to_int(self.data[dir_index: dir_index + 4], raw=True)
@@ -295,7 +295,6 @@ class DataHandler:
         if not found:
             raise Exception("Could not find any characters in save file!")
         delim_index, _ = self.find_next_string_index("DunDefArchetypes.EnemyGoblin", index, limit=len(self.data))
-        stop = False
         while index < delim_index and found:
             class_id = self.extract_string(index + len(search_string))
             if class_id not in CLASS_NAMES:

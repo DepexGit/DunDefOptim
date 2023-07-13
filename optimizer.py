@@ -1,7 +1,6 @@
 import os
 import re
 import argparse
-import time
 import pickle
 from colorama import init as init_colors
 from src.consts import *
@@ -9,7 +8,6 @@ from src.optim_targets import INPUT_FILE_PATH
 from src.equipment_handler import EquipmentHandler
 from src.data_handler import DataHandler
 from src.optim_targets import OPTIM_TARGETS
-
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(__file__))
@@ -21,12 +19,12 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     arg_parser.add_argument("mode", choices=["update", "print", "optimize", "debug"],
                             help="Selects task to execute.\n" +
-                            "update:    Decompress save file from game folder." +
-                            "Use 'Export to open' in-game before running this command\n" +
-                            "print:     Print a list of all equipment in save file.\n" +
-                            "optimize:  Find optimal equipment from save file." +
-                            "Modify 'OPTIM_TARGETS' in optim_targets.py or\n" +
-                            "           use -w and -t to set optimization parameters")
+                                 "update:    Decompress save file from game folder." +
+                                 "Use 'Export to open' in-game before running this command\n" +
+                                 "print:     Print a list of all equipment in save file.\n" +
+                                 "optimize:  Find optimal equipment from save file." +
+                                 "Modify 'OPTIM_TARGETS' in optim_targets.py or\n" +
+                                 "           use -w and -t to set optimization parameters")
     arg_parser.add_argument("-r", "--raw", action="store_true", help="Only output ASCII characters")
     arg_parser.add_argument("-t", "--target", help="Select character as optimization target")
     arg_parser.add_argument("-w", "--weights", nargs="+",
@@ -34,9 +32,10 @@ if __name__ == "__main__":
     arg_parser.add_argument("-f", "--full", action="store_true", help="Print best combination for each material")
     arg_parser.add_argument("-n", "--num_threads", type=int, default=-1, help="Number of worker threads to use")
     arg_parser.add_argument("-a", "--armor_only", action="store_true", help="Only optimize armors")
-    arg_parser.add_argument("-N", "--no_accessory_upgrades", action="store_true", help="Do not upgrade accessories, use current stats instead")
+    arg_parser.add_argument("-N", "--no_accessory_upgrades", action="store_true",
+                            help="Do not upgrade accessories, use current stats instead")
     arg_parser.add_argument("-p", "--print_targets", nargs="+", help="Only output optimization results" +
-                            " for given targets")
+                                                                     " for given targets")
     args = arg_parser.parse_args()
 
     init_colors(autoreset=True)

@@ -13,6 +13,7 @@ class EquipmentHandler:
     """
     Holds all equipment in one save file and provides methods for equipment optimization
     """
+
     def __init__(self, num_threads=-1, raw_output=False, path=DECOMP_FILE_PATH, armor_only=False):
         """
         Constructor for EquipmentHandler class. Reads stats for every equipment
@@ -114,10 +115,11 @@ class EquipmentHandler:
                     upgrade_cost += cost
                     upgrade_cost_no_accs += cost if self.all_equipment[e].type != "Accessory" else 0
         print(f"Estimated upgrade cost for all characters (without accessories): " +
-              f"{np.round(upgrade_cost / 1e9, 2)}B" + 
+              f"{np.round(upgrade_cost / 1e9, 2)}B" +
               f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
 
-    def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=[], upgrade_accs=True):
+    def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=[],
+                            upgrade_accs=True):
         """
         Finds optimal equipment by maximizing a weighted score of all stats.
         Only considers possible sets of the same material for armor. Prints optimization
@@ -194,8 +196,8 @@ class EquipmentHandler:
             best_stats = 0
             for i, equipment in enumerate(self.all_equipment):
                 if equipment.slot not in target_slots or equipment.material != equip_mat or \
-                   equipment.owner != "" and (equipment.owner != target) and cannot_steal or \
-                   equipment.owner in protected or self.reserved_equipment[i]:
+                        equipment.owner != "" and (equipment.owner != target) and cannot_steal or \
+                        equipment.owner in protected or self.reserved_equipment[i]:
                     continue
                 cur_score, cur_stats = equipment.get_weighted_score(weights, upgrade_accs)
                 if cur_score > best_score and i not in best_equips:
@@ -217,7 +219,8 @@ class EquipmentHandler:
                 prev_stats[i] = [eq_s + prev_s for eq_s, prev_s in zip(equip_stats, prev_stats[i])]
         return prev_equips, prev_stats, prev_scores
 
-    def print_optimization_results(self, all_equips, all_stats, all_scores, weights, target, print_all=False, upgrade_accs=True):
+    def print_optimization_results(self, all_equips, all_stats, all_scores, weights, target, print_all=False,
+                                   upgrade_accs=True):
         """
         Prints equipment found during optimization
 
@@ -230,6 +233,7 @@ class EquipmentHandler:
             print_all (bool): Print best equipment set for each armor material instead only the top one
             upgrade_accs (bool): If False: Only use current stats for accessories
         """
+
         def pos_neg_color(num):
             color = Fore.YELLOW
             if num < 0:
@@ -237,6 +241,7 @@ class EquipmentHandler:
             elif num > 0:
                 color = Fore.GREEN
             return color
+
         delim = "=" * 60
         header = list(STAT_OFFSET_DICT.keys())[4:]
         start_index = 0
@@ -281,7 +286,7 @@ class EquipmentHandler:
                     for i in range(len(stat_diffs)):
                         if weights[i] > 0:
                             stat_diffs[i] = pos_neg_color(stat_diffs[i]) + str(stat_diffs[i]) + \
-                            Style.RESET_ALL
+                                            Style.RESET_ALL
                 p_table = PrettyTable(header)
                 p_table.add_row(stat_diffs)
                 print(f"Stat changes with score delta " + \
@@ -291,8 +296,8 @@ class EquipmentHandler:
                       p_table.__str__())
                 upgrade_cost = sum([self.all_equipment[e].get_upgrade_costs() for e in equip])
                 upgrade_cost_no_accs = sum([self.all_equipment[e].get_upgrade_costs() \
-                    if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
-                print(f"Estimated upgrade cost (without accessories): {np.round(upgrade_cost / 1e9, 2)}B" + 
+                                                if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
+                print(f"Estimated upgrade cost (without accessories): {np.round(upgrade_cost / 1e9, 2)}B" +
                       f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
         print(delim)
 
