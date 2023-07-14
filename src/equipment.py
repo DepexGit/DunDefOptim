@@ -104,7 +104,7 @@ class Equipment:
     def get_upgrade_costs(self):
         """
         Returns the total mana cost to fully upgrade this item.
-        
+
         Returns:
             float: The cost
         """

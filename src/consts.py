@@ -97,3 +97,5 @@ MISC_OFFSET_DICT = {
 UPGRADE_COST_BASE = 3646.48407
 UPGRADE_COST_EXP = 1.58700072
 ACC_UPGRADE_COST = 17.9633e9
+# list of valid modifier keys
+VALID_MODIFIER_KEYS = ["ctrl", "shift", "alt"]

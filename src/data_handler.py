@@ -1,7 +1,7 @@
 import os
 import zlib
 from src.consts import *
-from src.optim_targets import INPUT_FILE_PATH
+from src.settings import INPUT_FILE_PATH
 from src.equipment import Equipment
 
 

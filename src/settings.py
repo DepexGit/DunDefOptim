@@ -52,3 +52,14 @@ OPTIM_TARGETS = {
     "BUFF_SUMMONER_NAME_1": buff_sum_weights,
     "BUFF_SUMMONER_NAME_2": buff_sum_weights
 }
+
+# modifier keys used for stacking towers, pick any combination of [ctrl, shift, alt]
+STACK_MODIFIER_KEYS = ["ctrl"]
+# set these to all keys used in game to build towers
+STACK_TOWER_KEYS = ["6", "7", "8", "9", "0"]
+# sends two mouse clicks when pressed together with STACK_MODIFIER_KEYS
+STACK_MINION_KEY = "3"
+# modifier keys used to quit the application, pick any combination of [ctrl, shift, alt]
+QUIT_MODIFIER_KEYS = ["ctrl", "shift"]
+# quits the application when pressed together with QUIT_MODIFIER_KEYS
+QUIT_KEY = "e"

@@ -35,6 +35,7 @@ class EquipmentHandler:
         self.target_classes = self.data_handler.get_all_target_classes()
         self.print_targets = list(self.target_classes.keys())
         self.print_type_filter = list(EQUIPMENT_TYPES.keys())
+        self.print_csv = False
         if self.num_threads == -1:
             self.num_threads = os.cpu_count()
         worker_pool = multiprocessing.Pool(processes=self.num_threads)
@@ -119,7 +120,7 @@ class EquipmentHandler:
               f"{np.round(upgrade_cost / 1e9, 2)}B" +
               f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
 
-    def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=[],
+    def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=None,
                             upgrade_accs=True):
         """
         Finds optimal equipment by maximizing a weighted score of all stats.
@@ -138,6 +139,8 @@ class EquipmentHandler:
             list[int]: Indices of equipment found during optimization
             float: Optimization score
         """
+        if protected is None:
+            protected = []
         all_equips = []
         all_stats = []
         all_scores = []
@@ -283,11 +286,11 @@ class EquipmentHandler:
             p_table = PrettyTable(header)
             stat = list(stat)
             if not self.raw_output:
-                for i, s in enumerate(stat):
-                    if weights[i] > 0:
-                        stat[i] = Style.BRIGHT + str(s) + Style.RESET_ALL
+                for j, s in enumerate(stat):
+                    if weights[j] > 0:
+                        stat[j] = Style.BRIGHT + str(s) + Style.RESET_ALL
                     else:
-                        stat[i] = Style.DIM + str(s) + Style.RESET_ALL
+                        stat[j] = Style.DIM + str(s) + Style.RESET_ALL
             p_table.add_row(list(stat))
             print(f"Stats with score {score}:\n" + p_table.__str__())
             if target != "":
@@ -309,14 +312,14 @@ class EquipmentHandler:
                                             Style.RESET_ALL
                 p_table = PrettyTable(header)
                 p_table.add_row(stat_diffs)
-                print(f"Stat changes with score delta " + \
-                      (pos_neg_color(score - owner_score) if not self.raw_output else '') + \
-                      str(score - owner_score) + \
-                      (Style.RESET_ALL if not self.raw_output else '') + ":\n" + \
+                print(f"Stat changes with score delta " +
+                      (pos_neg_color(score - owner_score) if not self.raw_output else '') +
+                      str(score - owner_score) +
+                      (Style.RESET_ALL if not self.raw_output else '') + ":\n" +
                       p_table.__str__())
                 upgrade_cost = sum([self.all_equipment[e].get_upgrade_costs() for e in equip])
-                upgrade_cost_no_accs = sum([self.all_equipment[e].get_upgrade_costs() \
-                                                if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
+                upgrade_cost_no_accs = sum([self.all_equipment[e].get_upgrade_costs()
+                                            if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
                 print(f"Estimated upgrade cost (without accessories): {np.round(upgrade_cost / 1e9, 2)}B" +
                       f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
         print(delim)
@@ -332,8 +335,9 @@ class EquipmentHandler:
         Returns:
             PrettyTable: Contains stats for given equipment
         """
-        header = ["Type", "Slot", "Material", "Tier"] + list(STAT_OFFSET_DICT.keys())[4:] + \
-                 ["Level", "Location"]
+        header = ["Type", "Slot", "Material", "Tier"] + \
+            list(STAT_OFFSET_DICT.keys())[0 if self.print_csv else 4:] + \
+            ["Level", "Location"]
         p_table = PrettyTable(header)
         if sort:
             all_equip = sorted(self.all_equipment, key=lambda e: e.index)
@@ -342,7 +346,9 @@ class EquipmentHandler:
         for i in indices:
             cur_equip = all_equip[i]
             if cur_equip.type in self.print_type_filter:
-                p_table.add_row(cur_equip.get_property_list(self.dirs))
+                p_table.add_row(cur_equip.get_property_list(self.dirs, self.print_csv))
+        if self.print_csv:
+            return p_table
         if self.raw_output:
             return p_table.__str__()
         table = ""
@@ -386,6 +392,8 @@ class EquipmentHandler:
         Returns:
             string: String form of generated PrettyTable
         """
-        table_string = self.generate_table(list(range(len(self.all_equipment))), sort=True)
-        p_table = self.generate_counts_table()
-        return table_string + "\nTotals:\n" + p_table.__str__()
+        equip_table = self.generate_table(list(range(len(self.all_equipment))), sort=True)
+        if self.print_csv:
+            return equip_table.get_csv_string()
+        counts_table = self.generate_counts_table()
+        return equip_table.__str__() + "\nTotals:\n" + counts_table.__str__()

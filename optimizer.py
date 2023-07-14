@@ -4,10 +4,10 @@ import argparse
 import pickle
 from colorama import init as init_colors
 from src.consts import *
-from src.optim_targets import INPUT_FILE_PATH
+from src.settings import INPUT_FILE_PATH, OPTIM_TARGETS
 from src.equipment_handler import EquipmentHandler
 from src.data_handler import DataHandler
-from src.optim_targets import OPTIM_TARGETS
+from src.hotkeys import setup_hotkeys
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(__file__))
@@ -17,12 +17,13 @@ if __name__ == "__main__":
         stat_string += key + ", "
     stat_string = stat_string[:-2]
     arg_parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    arg_parser.add_argument("mode", choices=["update", "print", "find_obsoletes", "optimize", "debug"],
+    arg_parser.add_argument("mode", choices=["update", "print", "find_obsoletes", "hotkeys", "optimize", "debug"],
                             help="Selects task to execute:\n" +
                                  "update:           Decompress save file from game folder." +
                                  "Use 'Export to open' in-game before running this command\n" +
                                  "print:            Print a list of all equipment in save file.\n" +
                                  "find_obsoletes:   List all pareto dominated equipment.\n" +
+                                 "hotkeys:          Start tower stacking script.\n" +
                                  "optimize:         Find optimal equipment from save file." +
                                  "Modify 'OPTIM_TARGETS' in optim_targets.py or\n" +
                                  "                  use -w and -t to set optimization parameters")
@@ -31,13 +32,15 @@ if __name__ == "__main__":
     arg_parser.add_argument("-w", "--weights", nargs="+",
                             help=f"Specify weights for stats. Stat names are: {stat_string}")
     arg_parser.add_argument("-f", "--full", action="store_true", help="Print best combination for each material")
-    arg_parser.add_argument("-n", "--num_threads", type=int, default=-1, help="Number of worker threads to use")
+    arg_parser.add_argument("-n", "--num_threads", type=int, default=-1, help="Number of worker threads to use " +
+                                                                              "while running update")
     arg_parser.add_argument("-a", "--armor_only", action="store_true", help="Only optimize armors")
     arg_parser.add_argument("-N", "--no_accessory_upgrades", action="store_true",
                             help="Do not upgrade accessories, use current stats instead")
     arg_parser.add_argument("-p", "--print_targets", nargs="+", help="Only output optimization results" +
                                                                      " for given targets")
     arg_parser.add_argument("-P", "--print_types", nargs="+", help="Only output equipment matching the given types")
+    arg_parser.add_argument("-e", "--export_csv", action="store_true", help="Print table as csv, implies --raw")
     args = arg_parser.parse_args()
 
     init_colors(autoreset=True)
@@ -59,6 +62,7 @@ if __name__ == "__main__":
         raise
     eh.raw_output = args.raw
     eh.armor_only = args.armor_only
+    eh.print_csv = args.export_csv
     if args.print_types is not None:
         type_filter = []
         for equip_type in args.print_types:
@@ -70,6 +74,8 @@ if __name__ == "__main__":
         print(eh)
     elif args.mode == "find_obsoletes":
         eh.find_obsolete_equipment()
+    elif args.mode == "hotkeys":
+        setup_hotkeys()
     elif args.mode == "optimize":
         if args.target and args.weights:
             weight_dict = {}
