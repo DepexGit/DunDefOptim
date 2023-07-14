@@ -73,7 +73,7 @@ class Equipment:
 
         Parameters:
             dirs (dict{int: list[string, int]}) Maps directory id to its name and parent id
-            include_res (bool): If True: includes restistance values
+            include_res (bool): If True: includes resistance values
 
         Returns:
             list[int]: List of equipment stats
@@ -187,7 +187,7 @@ class Equipment:
 
     def pareto_dominates(self, other):
         """
-        Checks if this equipment pareto dominates given other equipment.This ignores resistances and
+        Checks if this equipment pareto dominates given other equipment. This ignores
         all damage related values on weapons and pets.
 
         Parameters:
@@ -196,8 +196,14 @@ class Equipment:
         Returns:
             bool: True if and only if this pareto dominates other
         """
-        own_stats = np.array(list(self.stat_dict.values())[4:])
-        other_stats = np.array(list(other.stat_dict.values())[4:])
+        def prepare_stats(equip):
+            stats = np.array(list(equip.stat_dict.values())[:4])
+            stats -= (stats == 0) * 100
+            return np.concatenate((stats, np.array(list(equip.stat_dict.values())[4:]),
+                                   np.array([equip.remaining_upgrades])))
+
+        own_stats = prepare_stats(self)
+        other_stats = prepare_stats(other)
         return np.sum(own_stats >= other_stats) == len(own_stats)
 
     def __str__(self):
