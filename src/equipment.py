@@ -26,6 +26,7 @@ class Equipment:
         self.material = armor_material
         self.index = 0
         self.owner = ""
+        self.is_equipped = False
         self.dir_id = -1
         self.remaining_upgrades = 0
         self.remaining_upgrades_res = 0
@@ -46,15 +47,16 @@ class Equipment:
         self.remaining_upgrades = self.max_upgrades - self.level
         self.remaining_upgrades_res = self.remaining_upgrades
         resistances = list(self.stat_dict.values())[:4]
-        res_target = max(0, 16 - self.quality) + 29
+        res_target = 40 / QUALITY_PROPERTIES[self.quality][0]
         # assume pre upgraded items are good
-        if not (min(resistances) > 20 and self.level > 100):
+        if not (min(resistances) > 20 and self.level > 100 and self.is_equipped):
             # simulate capping resistances
             for res in resistances:
                 # missing resistance -> useless
                 if res == 0:
                     self.remaining_upgrades_res = -1
-                while res < res_target:
+                    return
+                while res <= res_target:
                     if res == 20 or res == 21:
                         res_offset = 3
                     elif 14 <= res < 20 or res == -1:
@@ -66,6 +68,7 @@ class Equipment:
                     # cannot max resistances -> useless
                     if self.remaining_upgrades_res == 0 and min(resistances) < res_target:
                         self.remaining_upgrades_res = -1
+                        return
 
     def get_property_list(self, dirs=None, include_res=False):
         """
@@ -115,6 +118,25 @@ class Equipment:
         return sum((UPGRADE_COST_BASE * level ** UPGRADE_COST_EXP for level in range(self.level,
                                                                                      self.max_upgrades)))
 
+    def get_boosted_stats(self, effective_stats):
+        """
+        Calculates effective stats after armor set boni.
+
+        Parameters:
+            effective_stats (np.array): Contains current stats of this item
+
+        Returns:
+            np.array: The boosted stats
+        """
+        boosted_stats = np.array(copy.deepcopy(effective_stats))
+        if self.type != "Armor":
+            return boosted_stats
+        quality_mult = QUALITY_PROPERTIES[self.quality][0]
+        boosted_stats_mask = boosted_stats > 0
+        boosted_stats_mask = boosted_stats_mask * quality_mult + ~boosted_stats_mask
+        boosted_stats = boosted_stats * boosted_stats_mask
+        return np.ceil(boosted_stats).astype(int)
+
     def get_weighted_score(self, weights, upgrade_accs=True):
         """
         Simulates upgrading the item to max rank, stats with higher weights have priority
@@ -138,18 +160,14 @@ class Equipment:
         if max_resistance:
             # item useless for non builder
             if self.remaining_upgrades_res < 0:
-                return 0, list(self.stat_dict.values())[4:]
+                return 0, self.get_boosted_stats(list(self.stat_dict.values())[4:])
             remaining_upgrades = self.remaining_upgrades_res
         effective_stats = self.get_post_upgrade_stats(remaining_upgrades, copy.deepcopy(weights), upgrade_accs)
-        if self.type == "Armor":
-            quality_mult = QUALITY_PROPERTIES[self.quality][0]
-            boosted_stats = effective_stats > 0
-            boosted_stats = boosted_stats * quality_mult + ~boosted_stats
-            effective_stats = effective_stats * boosted_stats
+        effective_stats = self.get_boosted_stats(effective_stats)
         score = np.sum(effective_stats * np.array(weights))
         if sum(weights) == 0:
             return score
-        return (score / sum(weights)), [math.ceil(x) for x in effective_stats]
+        return (score / sum(weights)), effective_stats
 
     def get_post_upgrade_stats(self, remaining_upgrades, weights, upgrade_accs):
         """
@@ -172,7 +190,10 @@ class Equipment:
             if effective_stats[best_stat] == 0:
                 weights[best_stat] = -float_info.max
                 continue
-            quality_cap = QUALITY_PROPERTIES[self.quality][1]
+            if self.type == "Accessory":
+                quality_cap = 500 if self.quality > 14 else 360
+            else:
+                quality_cap = QUALITY_PROPERTIES[self.quality][1]
             if self.type == "Familiar" and self.quality == 0:
                 if "Diamond" in self.desc_string:
                     quality_cap = 800

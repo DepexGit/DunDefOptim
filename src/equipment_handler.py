@@ -165,6 +165,14 @@ class EquipmentHandler:
                 all_equips, all_stats, all_scores = self.optimize_for_slots(
                     CHAR_SLOTS[self.target_classes[target]], weights, target, cannot_steal, protected,
                     all_equips, all_stats, all_scores, upgrade_accs=upgrade_accs)
+            else:
+                for i, equip in enumerate(self.all_equipment):
+                    if equip.owner == target and equip.type in ["Weapon", "Familiar"]:
+                        for j in range(len(all_equips)):
+                            all_equips[j].append(i)
+                            cur_score, cur_stats = equip.get_weighted_score(weights, upgrade_accs)
+                            all_stats[j] += cur_stats
+                            all_scores[j] += cur_score
         if target in self.print_targets:
             self.print_optimization_results(all_equips, all_stats, all_scores, weights, target, print_all, upgrade_accs)
         return all_equips[-1], all_scores[-1]
@@ -268,13 +276,11 @@ class EquipmentHandler:
         delim = "=" * 60
         header = list(STAT_OFFSET_DICT.keys())[4:]
         start_index = 0
-        is_dps_target = False
-        if max(weights[:4]) > 0:
-            is_dps_target = True
+        is_dps_target = True if max(weights[:4]) > 0 else False
         if not print_all:
             start_index = len(all_scores) - 1
         for i in range(start_index, len(all_scores)):
-            equip, stat, score = all_equips[i], all_stats[i], all_scores[i]
+            equip, stats, score = all_equips[i], all_stats[i], all_scores[i]
             score = math.ceil(score)
             target_str = target
             if not self.raw_output:
@@ -284,44 +290,42 @@ class EquipmentHandler:
             print(f"Rank {len(all_scores) - i} ({self.all_equipment[equip[0]].material})" + ":\n" +
                   self.generate_table(equip).__str__())
             p_table = PrettyTable(header)
-            stat = list(stat)
+            stats = list(stats)
             if not self.raw_output:
-                for j, s in enumerate(stat):
+                for j, s in enumerate(stats):
                     if weights[j] > 0:
-                        stat[j] = Style.BRIGHT + str(s) + Style.RESET_ALL
+                        stats[j] = Style.BRIGHT + str(s) + Style.RESET_ALL
                     else:
-                        stat[j] = Style.DIM + str(s) + Style.RESET_ALL
-            p_table.add_row(list(stat))
+                        stats[j] = Style.DIM + str(s) + Style.RESET_ALL
+            p_table.add_row(list(stats))
             print(f"Stats with score {score}:\n" + p_table.__str__())
-            if target != "":
-                owner_stats = np.zeros(len(weights))
-                owner_score = 0
-                for e in self.all_equipment:
-                    if e.owner == target and not \
-                            (is_dps_target and (e.type == "Weapon" or e.type == "Familiar")) and not \
-                            (self.armor_only and e.type != "Armor"):
-                        item_score, item_stats = e.get_weighted_score(weights, upgrade_accs)
-                        owner_stats += np.array(item_stats)
-                        owner_score += item_score
-                owner_score = math.ceil(owner_score)
-                stat_diffs = [int(e) for e in list(np.array(all_stats[-1]) - owner_stats)]
-                if not self.raw_output:
-                    for i in range(len(stat_diffs)):
-                        if weights[i] > 0:
-                            stat_diffs[i] = pos_neg_color(stat_diffs[i]) + str(stat_diffs[i]) + \
-                                            Style.RESET_ALL
-                p_table = PrettyTable(header)
-                p_table.add_row(stat_diffs)
-                print(f"Stat changes with score delta " +
-                      (pos_neg_color(score - owner_score) if not self.raw_output else '') +
-                      str(score - owner_score) +
-                      (Style.RESET_ALL if not self.raw_output else '') + ":\n" +
-                      p_table.__str__())
-                upgrade_cost = sum([self.all_equipment[e].get_upgrade_costs() for e in equip])
-                upgrade_cost_no_accs = sum([self.all_equipment[e].get_upgrade_costs()
-                                            if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
-                print(f"Estimated upgrade cost (without accessories): {np.round(upgrade_cost / 1e9, 2)}B" +
-                      f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
+            owner_stats = np.zeros(len(weights))
+            owner_score = 0
+            for e in self.all_equipment:
+                if e.owner == target and not \
+                        (self.armor_only and e.type != "Armor"):
+                    item_score, item_stats = e.get_weighted_score(weights, upgrade_accs)
+                    owner_stats += np.array(item_stats)
+                    owner_score += item_score
+            owner_score = math.ceil(owner_score)
+            stat_diffs = [int(e) for e in list(np.array(all_stats[-1]) - owner_stats)]
+            if not self.raw_output:
+                for j in range(len(stat_diffs)):
+                    if weights[j] > 0:
+                        stat_diffs[j] = pos_neg_color(stat_diffs[j]) + str(stat_diffs[j]) + \
+                                        Style.RESET_ALL
+            p_table = PrettyTable(header)
+            p_table.add_row(stat_diffs)
+            print(f"Stat changes with score delta " +
+                  (pos_neg_color(score - owner_score) if not self.raw_output else '') +
+                  str(score - owner_score) +
+                  (Style.RESET_ALL if not self.raw_output else '') + ":\n" +
+                  p_table.__str__())
+            upgrade_cost = sum([self.all_equipment[e].get_upgrade_costs() for e in equip])
+            upgrade_cost_no_accs = sum([self.all_equipment[e].get_upgrade_costs()
+                                        if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
+            print(f"Estimated upgrade cost (without accessories): {np.round(upgrade_cost / 1e9, 2)}B" +
+                  f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
         print(delim)
 
     def generate_table(self, indices, sort=False):

@@ -25,7 +25,7 @@ if __name__ == "__main__":
                                  "find_obsoletes:   List all pareto dominated equipment.\n" +
                                  "hotkeys:          Start tower stacking script.\n" +
                                  "optimize:         Find optimal equipment from save file." +
-                                 "Modify 'OPTIM_TARGETS' in optim_targets.py or\n" +
+                                 "Modify 'OPTIM_TARGETS' in src/settings.py or\n" +
                                  "                  use -w and -t to set optimization parameters")
     arg_parser.add_argument("-r", "--raw", action="store_true", help="Only output ASCII characters")
     arg_parser.add_argument("-t", "--target", help="Select character as optimization target")

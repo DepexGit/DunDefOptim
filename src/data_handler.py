@@ -279,6 +279,7 @@ class DataHandler:
             owner_index = self.find_next_string_index([0] * 2, owner_index, True, True)[0]
             owner_index = self.find_next_string_index([0] * 2, owner_index, True, True)[0]
             ret_equip.owner = self.extract_string(owner_index + 2)
+            ret_equip.is_equipped = True
         ret_equip.init_upgrades()
         return ret_equip, dir_index + 4
 
