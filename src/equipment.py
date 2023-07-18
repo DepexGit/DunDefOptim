@@ -48,27 +48,51 @@ class Equipment:
         self.remaining_upgrades_res = self.remaining_upgrades
         resistances = list(self.stat_dict.values())[:4]
         res_target = 40 / QUALITY_PROPERTIES[self.quality][0]
-        # assume pre upgraded items are good
-        if not (min(resistances) > 20 and self.level > 100 and self.is_equipped):
-            # simulate capping resistances
-            for res in resistances:
-                # missing resistance -> useless
-                if res == 0:
+        cur_level = self.level
+        soft_cap = 23
+        # assume pre upgraded equipped items are good
+        if min(resistances) > 20 and self.level > 100 and self.is_equipped:
+            return
+        # simulate soft-capping resistances
+        for i in range(len(resistances)):
+            # missing resistance -> useless
+            if resistances[i] == 0:
+                self.remaining_upgrades_res = -1
+                return
+            while resistances[i] < soft_cap:
+                if cur_level % 10 == 9:
+                    found = False
+                    for j in range(len(resistances)):
+                        if soft_cap <= resistances[j] < res_target:
+                            resistances[j] += 1
+                            cur_level += 1
+                            found = True
+                            break
+                    if found:
+                        continue
+                if resistances[i] == 20 or resistances[i] == 21:
+                    res_offset = 3
+                elif 14 <= abs(resistances[i]) < 20 or resistances[i] == -1:
+                    res_offset = 2
+                else:
+                    res_offset = 1
+                resistances[i] += res_offset
+                cur_level += 1
+                # cannot max resistances -> useless
+                if self.remaining_upgrades_res == 0 and min(resistances) < res_target:
                     self.remaining_upgrades_res = -1
                     return
-                while res <= res_target:
-                    if res == 20 or res == 21:
-                        res_offset = 3
-                    elif 14 <= res < 20 or res == -1:
-                        res_offset = 2
-                    else:
-                        res_offset = 1
-                    res += res_offset
-                    self.remaining_upgrades_res -= 1
-                    # cannot max resistances -> useless
-                    if self.remaining_upgrades_res == 0 and min(resistances) < res_target:
-                        self.remaining_upgrades_res = -1
-                        return
+        self.remaining_upgrades_res -= cur_level - self.level
+        # simulate capping resistances
+        res_target = math.ceil(40 / QUALITY_PROPERTIES[self.quality][0])
+        res_upgrades_needed = sum([res_target - res for res in resistances])
+        res_upgrades_available = math.floor(self.remaining_upgrades_res / 10) \
+            + math.floor((cur_level % 10 + self.remaining_upgrades_res % 10) / 10)
+        if res_upgrades_needed > res_upgrades_available:
+            self.remaining_upgrades_res = -1
+            return
+        else:
+            self.remaining_upgrades_res -= res_upgrades_needed
 
     def get_property_list(self, dirs=None, include_res=False):
         """
