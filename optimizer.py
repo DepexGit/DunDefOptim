@@ -100,4 +100,6 @@ if __name__ == "__main__":
         else:
             arg_parser.error("Optimizing with custom options requires weights and a target character")
     elif args.mode == "debug":
-        print(eh.target_classes)
+        target = "Lal"
+        eh.optimize_with_conditions({"Jasmine": OPTIM_TARGETS["Jasmine"], target: OPTIM_TARGETS[target]})
+        #eh.optimize_with_conditions(OPTIM_TARGETS)

@@ -189,9 +189,7 @@ class Equipment:
         effective_stats = self.get_post_upgrade_stats(remaining_upgrades, copy.deepcopy(weights), upgrade_accs)
         effective_stats = self.get_boosted_stats(effective_stats)
         score = np.sum(effective_stats * np.array(weights))
-        if sum(weights) == 0:
-            return score
-        return (score / sum(weights)), effective_stats
+        return score, effective_stats
 
     def get_post_upgrade_stats(self, remaining_upgrades, weights, upgrade_accs):
         """
@@ -258,7 +256,7 @@ class Equipment:
         Returns:
             PrettyTable: Contains stats
         """
-        header = ["Type", "Pos", "Material", "Tier"] + list(OFFSET_DICT.keys())[4:] + \
+        header = ["Type", "Pos", "Material", "Tier"] + list(STAT_OFFSET_DICT.keys())[4:] + \
                  ["Level"]
         p_table = PrettyTable(header)
         p_table.add_row(self.get_property_list())

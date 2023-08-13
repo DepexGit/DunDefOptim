@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import multiprocessing
 import os
@@ -7,6 +9,7 @@ from colorama import Fore, Back, Style
 from src.consts import *
 from src.data_handler import DataHandler
 from src.equipment import Equipment
+from itertools import product as cart_product
 
 
 class EquipmentHandler:
@@ -100,17 +103,12 @@ class EquipmentHandler:
         upgrade_cost = 0
         upgrade_cost_no_accs = 0
         for target in targets.keys():
-            if target not in self.target_classes.keys():
-                raise Exception(f"Unknown optimization target '{target}'")
-            for key in targets[target].keys():
-                if key not in STAT_OFFSET_DICT.keys():
-                    raise Exception(f"Unknown stat '{key}'")
-            weights = [0] * (len(STAT_OFFSET_DICT.keys()) - 4)
-            for i, stat in enumerate(list(STAT_OFFSET_DICT.keys())[4:]):
-                if stat in targets[target]:
-                    weights[i] = targets[target][stat]
-            equips, score = self.optimize_by_weights(weights, target, print_all, upgrade_accs=upgrade_accs)
-            for e in equips:
+            weights = self.extract_weights(target, targets)
+            all_equips, all_stats, all_scores = self.optimize_by_weights(weights, target, upgrade_accs=upgrade_accs)
+            if target in self.print_targets:
+                self.print_optimization_results(all_equips, all_stats, all_scores, weights, target,
+                                                print_all, upgrade_accs)
+            for e in all_equips[-1]:
                 self.reserved_equipment[e] = True
                 if target in self.print_targets:
                     cost = self.all_equipment[e].get_upgrade_costs()
@@ -120,7 +118,28 @@ class EquipmentHandler:
               f"{np.round(upgrade_cost / 1e9, 2)}B" +
               f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
 
-    def optimize_by_weights(self, weights, target, print_all=False, cannot_steal=False, protected=None,
+    def extract_weights(self, target, targets):
+        """
+        Parameters:
+            target (string): Name of the target for which weights are to be read
+            targets (dict{string: dict{string, float}}): Maps target names to weights for optimization
+
+        Returns:
+            (dict{string: float}): Maps stat name to weight
+        """
+        if target not in self.target_classes.keys():
+            raise Exception(f"Unknown optimization target '{target}'")
+        for key in targets[target].keys():
+            if key not in STAT_OFFSET_DICT.keys():
+                raise Exception(f"Unknown stat '{key}'")
+        weights = np.zeros(len(STAT_OFFSET_DICT.keys()) - 4)
+        for i, stat in enumerate(list(STAT_OFFSET_DICT.keys())[4:]):
+            if stat in targets[target]:
+                weights[i] = targets[target][stat]
+        total = sum(weights)
+        return weights if total == 0 else weights / total
+
+    def optimize_by_weights(self, weights, target, cannot_steal=False, protected=None,
                             upgrade_accs=True):
         """
         Finds optimal equipment by maximizing a weighted score of all stats.
@@ -173,9 +192,7 @@ class EquipmentHandler:
                             cur_score, cur_stats = equip.get_weighted_score(weights, upgrade_accs)
                             all_stats[j] += cur_stats
                             all_scores[j] += cur_score
-        if target in self.print_targets:
-            self.print_optimization_results(all_equips, all_stats, all_scores, weights, target, print_all, upgrade_accs)
-        return all_equips[-1], all_scores[-1]
+        return all_equips, all_stats, all_scores
 
     def optimize_for_slots(self, slots, weights, target, cannot_steal, protected,
                            prev_equips, prev_stats, prev_scores, equip_mat=None, upgrade_accs=True):
@@ -250,8 +267,140 @@ class EquipmentHandler:
         else:
             print(f"{self.generate_table(obsolete_equip)}\nTotals:\n{self.generate_counts_table(obsolete_equip)}")
 
-    def print_optimization_results(self, all_equips, all_stats, all_scores, weights, target, print_all=False,
-                                   upgrade_accs=True):
+    def optimize_with_conditions(self, targets, conditions=None, print_all=False,
+                                 upgrade_accs=True, add_speed_condition=True):
+        if conditions is None:
+            conditions = {}
+        for target in conditions:
+            if target not in self.target_classes:
+                raise Exception(f"Unknown target in conditions '{target}'")
+        reserved_equip = []
+        for target in targets:
+            weights = self.extract_weights(target, targets)
+            target_conditions = []
+            if target in conditions:
+                target_conditions = conditions[target]
+            if add_speed_condition:
+                target_conditions.append(["HSPD", lambda a, b: a > b, 99])
+            reserved_equip = np.append(reserved_equip, self.optimize_for_target(
+                target, weights, target_conditions, reserved_equip, print_all, upgrade_accs))
+
+    def optimize_for_target(self, target, weights, conditions, reserved_equip,
+                            print_all=False, upgrade_accs=True):
+        # map equip type to list of (equip_id, score) tuples
+        slot_dict = {}
+        weapon_slots = set()
+        for slots in CHAR_SLOTS[self.target_classes[target]]:
+            for slot in slots:
+                if slot != "Pet":
+                    weapon_slots.add(slot)
+        for i, equip in enumerate(self.all_equipment):
+            if i in reserved_equip:
+                continue
+            if equip.type == "Weapon":
+                if equip.slot not in weapon_slots:
+                    continue
+                slot = "Weapon"
+            elif equip.type == "Armor":
+                slot = equip.slot + equip.material
+            elif equip.type == "Accessory":
+                slot = equip.slot
+            else:
+                slot = "Pet"
+            score, stats = equip.get_weighted_score(weights, upgrade_accs)
+            if slot not in slot_dict.keys():
+                slot_dict[slot] = [(i, score, stats)]
+            else:
+                slot_dict[slot].append((i, score, stats))
+        # get all slots relevant to this target
+        target_slots = ["Hat", "Mask", "Bracers"]
+        if self.target_classes[target] == "Squire":
+            target_slots.append("Shield")
+        if max(weights[:4]) <= 0:
+            for slots in CHAR_SLOTS[self.target_classes[target]]:
+                if slots[0] == "Pet":
+                    target_slots.append("Pet")
+                else:
+                    target_slots.append("Weapon")
+        # remove pareto dominated items
+        for slot in slot_dict.keys():
+            num_iterations = 1
+            if slot in ["Weapon", "Pet"]:
+                num_iterations = target_slots.count(slot)
+            obsoletes = copy.deepcopy(slot_dict[slot])
+            for i in range(num_iterations):
+                cur_obsoletes = []
+                for ((id_0, score_0, _), (id_1, score_1, stats_1)) in cart_product(obsoletes, obsoletes):
+                    if id_0 == id_1:
+                        continue
+                    if score_0 < score_1:
+                        continue
+                    is_dominating = True
+                    for stat, cond_fun, _ in conditions:
+                        if not cond_fun(self.all_equipment[id_0].stat_dict[stat],
+                                        self.all_equipment[id_1].stat_dict[stat]):
+                            is_dominating = False
+                            break
+                    if is_dominating:
+                        cur_obsoletes.append((id_1, score_1, stats_1))
+                obsoletes = copy.deepcopy(cur_obsoletes)
+            slot_dict[slot] = [(e_id, score, stats) for e_id, score, stats in slot_dict[slot]
+                               if e_id not in [i for i, _, _ in obsoletes]]
+        # get pet and weapon stats for non builders
+        own_equip = []
+        own_stats = np.zeros_like(weights, dtype=np.int32)
+        own_score = 0
+        if max(weights[:4]) > 0:
+            for i, equip in enumerate(self.all_equipment):
+                if equip.owner == target and equip.type in ["Weapon", "Familiar"]:
+                    score, stats = equip.get_weighted_score(weights, upgrade_accs)
+                    own_score += score
+                    own_stats += stats
+                    own_equip.append(i)
+        all_scores = []
+        all_equips = []
+        all_stats = []
+        for material in ARMOR_MATERIALS:
+            best_score = -1
+            best_equip = []
+            best_stats = []
+            cur_slots = copy.copy(target_slots)
+            for pair in cart_product(ARMOR_SLOTS, [material]):
+                cur_slots.insert(0, "".join(pair))
+            #print([f"{s}: {len(slot_dict[s])}" for s in slot_dict if s in cur_slots])
+            #print(np.prod([len(slot_dict[s]) for s in slot_dict if s in cur_slots]))
+            # iterate over cartesian product of equip for slots of target
+            for loadout in cart_product(*[slot_dict[slot] for slot in cur_slots]):
+                cur_equip = [equip for equip, score, stats in loadout] + own_equip
+                if len(np.unique(cur_equip)) != len(cur_equip):
+                    continue
+                is_valid = True
+                # find the best combination that fulfills all conditions
+                for stat, cond_fun, threshold in conditions:
+                    stat_total = sum([self.all_equipment[e].stat_dict[stat] for e in cur_equip])
+                    if not cond_fun(stat_total, threshold):
+                        is_valid = False
+                        break
+                if not is_valid:
+                    continue
+                cur_score = sum([score for equip, score, stats in loadout]) + own_score
+                if cur_score > best_score:
+                    best_score = cur_score + own_score
+                    best_equip = cur_equip
+                    best_stats = np.sum([stats for equip, score, stats in loadout], axis=0) + own_stats
+            all_equips.append(best_equip)
+            all_scores.append(best_score)
+            all_stats.append(best_stats)
+        indices = np.argsort(all_scores)
+        all_equips = np.array(all_equips)[indices]
+        all_stats = np.array(all_stats)[indices]
+        all_scores = np.array(all_scores)[indices]
+        self.print_optimization_results(all_equips, all_stats, all_scores, weights, target,
+                                        print_all, upgrade_accs)
+        return all_equips[-1]
+
+    def print_optimization_results(self, all_equips, all_stats, all_scores, weights, target,
+                                   print_all=False, upgrade_accs=True):
         """
         Prints equipment found during optimization
 
@@ -279,8 +428,12 @@ class EquipmentHandler:
         is_dps_target = True if max(weights[:4]) > 0 else False
         if not print_all:
             start_index = len(all_scores) - 1
+        found_equip = False
         for i in range(start_index, len(all_scores)):
             equip, stats, score = all_equips[i], all_stats[i], all_scores[i]
+            if len(equip) == 0:
+                continue
+            found_equip = True
             score = math.ceil(score)
             target_str = target
             if not self.raw_output:
@@ -326,6 +479,8 @@ class EquipmentHandler:
                                         if self.all_equipment[e].type != "Accessory" else 0 for e in equip])
             print(f"Estimated upgrade cost (without accessories): {np.round(upgrade_cost / 1e9, 2)}B" +
                   f" ({np.round(upgrade_cost_no_accs / 1e9, 2)}B)")
+        if not found_equip:
+            print(Fore.RED + f"No equipment found for {Style.BRIGHT}{target}!" + Style.RESET_ALL)
         print(delim)
 
     def generate_table(self, indices, sort=False):
