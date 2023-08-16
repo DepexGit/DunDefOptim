@@ -15,7 +15,8 @@ tower rate and 0 for every other stat, then an item with 300 tower hp, 200 tower
 200 * 1 + 100 * 0.5 = 250. You can specify one set of weights for every character whose gear you want to optimize by modifying 
 *OPTIM_TARGETS* in *src/settings.py*. Weights for stats you did not specify are automatically set to 0. When running the 
 optimization, no item can the assigned to more than one character. The order of your characters in *OPTIM_TARGETS* determines their 
-priority.
+priority. By default the optimization only outputs equipment sets with a stat total of at least 100 in hero speed. To add more conditions, modify *CONDITIONS* 
+in *src/settings.py*. Warning: Conditions can drastically increase the time it takes to run the optimization. 
 
 These two steps have to be repeated every time you obtain new relevant items:
 
