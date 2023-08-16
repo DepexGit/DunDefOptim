@@ -586,9 +586,9 @@ class EquipmentHandler:
             for e in self.all_equipment:
                 if e.owner == target and not \
                         (self.armor_only and e.type != "Armor"):
-                    item_score, item_stats = e.get_weighted_score(weights, upgrade_accs)
+                    _, item_stats = e.get_weighted_score(weights, upgrade_accs)
                     owner_stats += np.array(item_stats)
-                    owner_score += item_score
+                    owner_score += (item_stats * np.array(weights)).sum()
             owner_score = math.ceil(owner_score)
             stat_diffs = [int(e) for e in list(np.array(all_stats[-1]) - owner_stats)]
             if not self.raw_output:
