@@ -84,6 +84,8 @@ STAT_OFFSET_DICT = {
     "TSPD": [36, 4],
     "TDMG": [40, 4],
     "TRAN": [44, 4]}
+# maps stat names to their index in weights
+STAT_INDEX_DICT = {key: i for i, key in enumerate(list(STAT_OFFSET_DICT.keys())[4:])}
 # maps misc stats to offset and length after EQUIPMENT_MARKER
 MISC_OFFSET_DICT = {
     "level": [114, 4],
@@ -99,3 +101,19 @@ UPGRADE_COST_EXP = 1.58700072
 ACC_UPGRADE_COST = 17.9633e9
 # list of valid modifier keys
 VALID_MODIFIER_KEYS = ["ctrl", "shift", "alt"]
+
+
+class AtLeast:
+    name = "at_least"
+
+    @staticmethod
+    def apply(a, b):
+        return a >= b
+
+
+class AtMost:
+    name = "at_most"
+
+    @staticmethod
+    def apply(a, b):
+        return a <= b

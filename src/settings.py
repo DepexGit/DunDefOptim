@@ -1,4 +1,5 @@
 from os import sep
+from consts import AtLeast, AtMost
 
 # path to compressed save file
 # change this to point to current game installation directory
@@ -15,7 +16,7 @@ Hero damage:    HDMG
 Hero speed:     HSPD
 Hero repair:    HREP
 Ability 1:      AB1
-Ability 2::     AB2
+Ability 2:      AB2
 Tower health:   THP
 Tower damage:   TDMG
 Tower rate:     TSPD
@@ -52,7 +53,19 @@ OPTIM_TARGETS = {
     "BUFF_SUMMONER_NAME_1": buff_sum_weights,
     "BUFF_SUMMONER_NAME_2": buff_sum_weights
 }
-
+"""
+WARNING: ADDING CONDITIONS WILL DRASTICALLY SLOW DOWN THE OPTIMIZATION PROCESS.
+Here you can set conditions which must be fulfilled by equipment during optimization.
+The below example creates two conditions for JESTER_NAME: Ability 2 (AB2) must be at least 3726 and
+tower range (TRAN) must be at most 0.
+By default a condition which requires hero speed to be at least 100 is added to every character before
+optimization, unless you use the --no_speed_condition flag during optimization.
+"""
+CONDITIONS = {
+    "JESTER_NAME": [["AB2", AtLeast, 3726], ["TRAN", AtMost, 0]]
+}
+# items currently equipped on these characters will be ignored during optimization
+PROTECTED = ["DPS_EV_NAME"]
 # modifier keys used for stacking towers, pick any combination of [ctrl, shift, alt]
 STACK_MODIFIER_KEYS = ["ctrl"]
 # set these to all keys used in game to build towers
