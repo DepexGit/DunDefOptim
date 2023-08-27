@@ -72,7 +72,7 @@ STACK_MODIFIER_KEYS = ["ctrl"]
 STACK_TOWER_KEYS = ["6", "7", "8", "9", "0"]
 # sends two mouse clicks when pressed together with STACK_MODIFIER_KEYS
 STACK_MINION_KEY = "l"
-# sends right mouse down after when pressed together with STACK_MODIFIER_KEYS
+# sends right mouse down when pressed together with STACK_MODIFIER_KEYS
 HOLD_MOUSE_KEY = "j"
 # modifier keys used to quit the application, pick any combination of [ctrl, shift, alt]
 QUIT_MODIFIER_KEYS = ["ctrl", "shift"]

@@ -44,6 +44,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("-e", "--export_csv", action="store_true", help="Print table as csv, implies --raw")
     arg_parser.add_argument("-s", "--no_speed_condition", action="store_true",
                             help="Disable the automated addition of hero speed > 100 as a condition")
+    #arg_parser.add_argument("-")
     args = arg_parser.parse_args()
 
     init_colors(autoreset=True)

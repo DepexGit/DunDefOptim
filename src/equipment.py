@@ -238,7 +238,7 @@ class Equipment:
         potential_upgrades = {}
         effective_stats = list(self.stat_dict.values())[4:]
         if self.type == "Accessory" and not upgrade_accs:
-            return np.array(effective_stats)
+            return np.array(effective_stats), potential_upgrades
         while remaining_upgrades > 0 and max(weights) > 0:
             best_stat = np.argmax(np.array(weights))
             if effective_stats[best_stat] == 0:
