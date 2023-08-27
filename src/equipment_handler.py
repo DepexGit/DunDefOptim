@@ -212,7 +212,7 @@ class EquipmentHandler:
                 Maps target names to list of conditions
             add_speed_condition: If True: Ensure all equipment will grant at least 100 movement speed
             protected (list[string]): Targets to be ignored during optimization
-            cannot_steal (bool): If True: Do not redistribute items which are currently equipped
+            cannot_steal (bool): Ignore items already equipped on another character
         """
         if protected is None:
             protected = {}
@@ -241,7 +241,7 @@ class EquipmentHandler:
             is_valid = equipment_is_valid(target_conditions, all_stats[-1])
             if not is_valid:
                 all_equips, all_stats, all_scores = self.optimize_with_conditions(
-                    target, weights, target_conditions, upgrade_accs)
+                    target, weights, target_conditions, upgrade_accs, cannot_steal=cannot_steal)
             if target in self.print_targets:
                 self.print_optimization_results(all_equips, all_stats, all_scores, weights, target,
                                                 print_all, upgrade_accs)
@@ -366,7 +366,7 @@ class EquipmentHandler:
             best_stats = 0
             for i, equipment in enumerate(self.all_equipment):
                 if equipment.slot not in target_slots or equipment.material != equip_mat or \
-                        equipment.owner != "" and (equipment.owner != target) and cannot_steal or \
+                        equipment.is_equipped and equipment.owner != target and cannot_steal or \
                         equipment.owner in protected or self.reserved_equipment[i]:
                     continue
                 cur_score, cur_stats = equipment.get_weighted_score(weights, upgrade_accs)
@@ -408,7 +408,7 @@ class EquipmentHandler:
         else:
             print(f"{self.generate_table(obsolete_equip)}\nTotals:\n{self.generate_counts_table(obsolete_equip)}")
 
-    def optimize_with_conditions(self, target, weights, conditions, upgrade_accs=True):
+    def optimize_with_conditions(self, target, weights, conditions, upgrade_accs=True, cannot_steal=False):
         """
         Finds optimal equipment for each armor material which fulfills all given conditions
         by maximizing a weighted score of all stats.
@@ -419,6 +419,7 @@ class EquipmentHandler:
             weights (list[float]): Contains weights for every stat
             conditions (list[list[string, condition class, int]]): Contains condition stats, typer and thresholds
             upgrade_accs (bool): If False: Only use current stats for accessories
+            cannot_steal (bool): Ignore items already equipped on another character
 
         Returns:
             list[list[int]]: Ids of the best equipment for each armor type,
@@ -433,7 +434,8 @@ class EquipmentHandler:
                 if slot != "Pet":
                     weapon_slots.add(slot)
         for i, equip in enumerate(self.all_equipment):
-            if self.reserved_equipment[i] or equip.type != "Armor" and self.armor_only:
+            if self.reserved_equipment[i] or equip.type != "Armor" and self.armor_only \
+                or cannot_steal and equip.owner != target and equip.is_equipped:
                 continue
             if equip.type == "Weapon":
                 if equip.slot not in weapon_slots:
