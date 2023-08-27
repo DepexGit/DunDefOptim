@@ -197,7 +197,7 @@ class EquipmentHandler:
         return found_equip
 
     def optimize_for_targets(self, targets, conditions=None, print_all=False, upgrade_accs=True,
-                             add_speed_condition=True, protected=None):
+                             add_speed_condition=True, protected=None, cannot_steal=False):
         """
         Finds a set of equipment for each given target by optimizing for given weights.
         Targets have descending priority for equipment by their order in given targets dict.
@@ -212,6 +212,7 @@ class EquipmentHandler:
                 Maps target names to list of conditions
             add_speed_condition: If True: Ensure all equipment will grant at least 100 movement speed
             protected (list[string]): Targets to be ignored during optimization
+            cannot_steal (bool): If True: Do not redistribute items which are currently equipped
         """
         if protected is None:
             protected = {}
@@ -235,7 +236,8 @@ class EquipmentHandler:
             if add_speed_condition:
                 target_conditions.append(["HSPD", AtLeast, 100])
             weights = self.extract_weights(target, targets, target_conditions)
-            all_equips, all_stats, all_scores = self.optimize_by_weights(weights, target, upgrade_accs=upgrade_accs)
+            all_equips, all_stats, all_scores = self.optimize_by_weights(weights, target, upgrade_accs=upgrade_accs,
+                                                                         cannot_steal=cannot_steal)
             is_valid = equipment_is_valid(target_conditions, all_stats[-1])
             if not is_valid:
                 all_equips, all_stats, all_scores = self.optimize_with_conditions(

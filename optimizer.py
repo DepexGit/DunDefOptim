@@ -44,7 +44,8 @@ if __name__ == "__main__":
     arg_parser.add_argument("-e", "--export_csv", action="store_true", help="Print table as csv, implies --raw")
     arg_parser.add_argument("-s", "--no_speed_condition", action="store_true",
                             help="Disable the automated addition of hero speed > 100 as a condition")
-    #arg_parser.add_argument("-")
+    arg_parser.add_argument("-l", "--lock_equipment", action="store_true",
+                            help="Do not redistribute items which are currently equipped")
     args = arg_parser.parse_args()
 
     init_colors(autoreset=True)
@@ -95,7 +96,8 @@ if __name__ == "__main__":
                     weight_dict[cur_stat] = float(elem)
             eh.optimize_for_targets({args.target: weight_dict}, print_all=args.full,
                                     upgrade_accs=not args.no_accessory_upgrades,
-                                    add_speed_condition=not args.no_speed_condition)
+                                    add_speed_condition=not args.no_speed_condition,
+                                    cannot_steal=args.lock_equipment)
         elif not args.target and not args.weights:
             if args.print_targets is not None:
                 for target in args.print_targets:
@@ -104,7 +106,8 @@ if __name__ == "__main__":
                 eh.print_targets = args.print_targets
             eh.optimize_for_targets(OPTIM_TARGETS, CONDITIONS, print_all=args.full,
                                     upgrade_accs=not args.no_accessory_upgrades,
-                                    protected=PROTECTED, add_speed_condition=not args.no_speed_condition)
+                                    protected=PROTECTED, add_speed_condition=not args.no_speed_condition,
+                                    cannot_steal=args.lock_equipment)
         else:
             arg_parser.error("Optimizing with custom options requires weights and a target character")
     elif args.mode == "debug":
